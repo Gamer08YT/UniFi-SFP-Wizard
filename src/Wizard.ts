@@ -138,7 +138,7 @@ class Wizard {
 
         // Register Shutdown Button. Click Listener.
         Wizard.poweroffButton.on("click", () => {
-            Wizard.sendCommand("shutdown");
+            Wizard.sendCommandNoResponse("shutdown");
         });
     }
 
@@ -324,6 +324,30 @@ class Wizard {
                 }
             }, timeout);
         });
+    }
+
+    /**
+     * Sends a command to a connected Bluetooth device without expecting a response.
+     *
+     * @param {string} command - The command string to send to the device.
+     * @return {Promise<void>} Resolves when the command is successfully sent.
+     * @throws {Error} If the InfoChar property is not set or the device is not connected.
+     */
+    public static async sendCommandNoResponse(command: string): Promise<void> {
+        if (!Wizard.infoChar) throw new Error("InfoChar not set / not connected");
+
+        console.log(`Sending GATT command (no response expected): ${command}`);
+
+        const encoder = new TextEncoder();
+        const data = encoder.encode(command);
+
+        // Write command to the Info characteristic
+        await Wizard.infoChar.writeValueWithoutResponse(data);
+
+        console.log(`Wrote ${data.length} bytes to InfoChar`);
+
+        // Optional delay to give the device time to process
+        await new Promise((resolve) => setTimeout(resolve, 100));
     }
 }
 
