@@ -10,10 +10,10 @@ class Wizard {
 
     // Store DOM Element Intances.
     private static connectButton: JQuery<HTMLElement>;
+    private static poweroffButton: JQuery<HTMLElement>;
 
     // Store BLE Device Instance.
     private static device: BluetoothDevice;
-
     private static infoChar: BluetoothRemoteGATTCharacteristic;
     private static pendingResolver: ((data: Uint8Array) => void) | null = null;
 
@@ -44,6 +44,24 @@ class Wizard {
         } else {
             Wizard.connectButton.removeClass("btn-danger");
             Wizard.connectButton.addClass("btn-primary");
+        }
+
+        // Enable or Disable Controls.
+        Wizard.setControls(state);
+    }
+
+    /**
+     * Updates the control state of the poweroff button based on the provided boolean value.
+     *
+     * @param {boolean} state - A flag indicating whether to enable or disable the poweroff button.
+     *                          If true, the button is enabled; if false, the button is disabled.
+     * @return {void} Does not return any value.
+     */
+    private static setControls(state: boolean) {
+        if (state) {
+            Wizard.poweroffButton.removeAttr("disabled");
+        } else {
+            Wizard.poweroffButton.attr("disabled", "disabled");
         }
     }
 
@@ -109,12 +127,18 @@ class Wizard {
      * @return {void} This method does not return a value.
      */
     private registerListeners(): void {
+        // Register Connect Button Click Listener.
         Wizard.connectButton.on("click", () => {
             if (Wizard.device == null) {
                 Wizard.scanDevices();
             } else {
                 Wizard.disconnect();
             }
+        });
+
+        // Register Shutdown Button. Click Listener.
+        Wizard.poweroffButton.on("click", () => {
+            Wizard.sendCommand("shutdown");
         });
     }
 
@@ -166,6 +190,7 @@ class Wizard {
      */
     private prepareDOM(): void {
         Wizard.connectButton = $("#connect-wizard");
+        Wizard.poweroffButton = $("#poweroff-wizard");
     }
 
     /**
@@ -179,7 +204,9 @@ class Wizard {
         const server = await device.gatt?.connect();
 
         // Prepare GATT Notify.
-        await this.prepareNotify(server);
+        await this.prepareNotify(server).then(() => {
+            console.log("Notify Prepared");
+        });
 
         // Set GATT Event Listener.
         device.addEventListener('gattserverdisconnected', () => {
@@ -231,7 +258,7 @@ class Wizard {
      * @param {BluetoothRemoteGATTServer} server - The GATT server connected to the Bluetooth device.
      * @return {Promise<void>} A promise that resolves once the notifications and event listener are prepared.
      */
-    private static async prepareNotify(server: BluetoothRemoteGATTServer | undefined) {
+    private static async prepareNotify(server: BluetoothRemoteGATTServer | undefined): Promise<void> {
         if (server == null) return;
 
         // Print Debug Message.
@@ -260,6 +287,42 @@ class Wizard {
                 Wizard.pendingResolver(buf);
                 Wizard.pendingResolver = null;
             }
+        });
+    }
+
+
+    /**
+     * Sends a command to the connected device and waits for a response within a specified timeout.
+     * Throws an error if the connection is not established.
+     *
+     * @param {string} command The string command to be sent to the connected device.
+     * @param {number} [timeout=3000] The timeout duration in milliseconds to wait for a response. Defaults to 3000ms.
+     * @return {Promise<Uint8Array>} A promise that resolves with a Uint8Array containing the response from the device.
+     *                               Rejects with an error if a timeout occurs or if no response is received.
+     */
+    public static async sendCommand(command: string, timeout: number = 3000): Promise<Uint8Array> {
+        if (!Wizard.infoChar) throw new Error("Not connected");
+
+        console.log(`Sending Command: ${command}`);
+
+        // Prepare Encoder.
+        const encoder = new TextEncoder();
+
+        // Prepare Pending Resolver.
+        Wizard.pendingResolver = null;
+
+        // Send Command.
+        return new Promise<Uint8Array>((resolve, reject) => {
+            Wizard.pendingResolver = resolve;
+            Wizard.infoChar!.writeValueWithoutResponse(encoder.encode(command));
+
+            // Timeout Resolver.
+            setTimeout(() => {
+                if (Wizard.pendingResolver) {
+                    Wizard.pendingResolver = null;
+                    reject(new Error("Timeout waiting for response"));
+                }
+            }, timeout);
         });
     }
 }
