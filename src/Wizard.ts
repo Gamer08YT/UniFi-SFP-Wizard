@@ -64,6 +64,7 @@ class Wizard {
                     // @ts-ignore
                     navigator.bluetooth.requestDevice({
                         filters: [{namePrefix: Wizard.wizardSSID}],
+                        optionalServices: [this.normalizeUuid(GATTUUID.Service), this.normalizeUuid(GATTUUID.WriteChar), this.normalizeUuid(GATTUUID.NotifyChar), this.normalizeUuid(GATTUUID.SecondaryNotify), this.normalizeUuid(GATTUUID.Service2)],
                     }).then(device => {
                         console.log(device);
 
@@ -167,6 +168,12 @@ class Wizard {
         Wizard.connectButton = $("#connect-wizard");
     }
 
+    /**
+     * Sets the connected Bluetooth device by establishing a connection and preparing for notifications.
+     *
+     * @param {BluetoothDevice} device - The Bluetooth device to connect to and set as the active device.
+     * @return {Promise<void>} A promise that resolves once the device is connected and notifications are prepared.
+     */
     private static async setConnectedDevice(device: BluetoothDevice) {
         // Try to connect to a device.
         const server = await device.gatt?.connect();
@@ -181,6 +188,17 @@ class Wizard {
 
         // Set Device Instance.
         Wizard.device = device;
+    }
+
+    /**
+     * Normalizes a UUID string to ensure it is lowercased and trimmed of any extraneous whitespace.
+     *
+     * @param {string} uuid - The UUID string to be normalized.
+     * @return {string} The normalized UUID string in lowercase, with any extra whitespace removed.
+     */
+    private static normalizeUuid(uuid: string): string {
+        // Web Bluetooth uses lowercase-UUIDs
+        return uuid.trim().toLowerCase();
     }
 
     /**
@@ -216,14 +234,20 @@ class Wizard {
     private static async prepareNotify(server: BluetoothRemoteGATTServer | undefined) {
         if (server == null) return;
 
+        // Print Debug Message.
+        console.log("Preparing Notify");
+
         // Get Service.
-        const service = await server.getPrimaryService(GATTUUID.Service);
+        const service = await server.getPrimaryService(this.normalizeUuid(GATTUUID.Service));
 
         // Prepare Pending Resolver.
-        Wizard.infoChar = await service.getCharacteristic(GATTUUID.NotifyChar);
+        Wizard.infoChar = await service.getCharacteristic(this.normalizeUuid(GATTUUID.NotifyChar));
 
         // Start Notify.
         await Wizard.infoChar.startNotifications();
+
+        // Print Debug Message.
+        console.log("Notify Started");
 
         // Prepare Pending Resolver.
         Wizard.infoChar.addEventListener("characteristicvaluechanged", (event) => {
