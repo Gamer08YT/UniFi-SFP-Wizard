@@ -1,3 +1,5 @@
 {
-  "enable-flag": "Open about://flags and enable #experimental-web-platform-features to use Web Bluetooth."
+  "enable-flag": "Open about://flags and enable #experimental-web-platform-features to use Web Bluetooth.",
+  "connect": "Connect",
+  "disconnect": "Disconnect"
 }
