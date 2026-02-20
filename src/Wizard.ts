@@ -14,11 +14,8 @@ class Wizard {
     // Store BLE Device Instance.
     private static device: BluetoothDevice;
 
-    private static infoChar!: BluetoothRemoteGATTCharacteristic;
-    private static notifyEnabled = false;
-
-    private static responseBuffer: Uint8Array | null = null;
-    private static pendingResolver?: (data: Uint8Array) => void;
+    private static infoChar: BluetoothRemoteGATTCharacteristic;
+    private static pendingResolver: ((data: Uint8Array) => void) | null = null;
 
     constructor() {
         // Prepare Locale.
@@ -170,10 +167,12 @@ class Wizard {
         Wizard.connectButton = $("#connect-wizard");
     }
 
-    private static setConnectedDevice(device: BluetoothDevice) {
+    private static async setConnectedDevice(device: BluetoothDevice) {
         // Try to connect to a device.
-        device.gatt?.connect().catch(error => console.error(error)).then(() => console.log("Connected to Device."));
+        const server = await device.gatt?.connect();
 
+        // Prepare GATT Notify.
+        await this.prepareNotify(server);
 
         // Set GATT Event Listener.
         device.addEventListener('gattserverdisconnected', () => {
@@ -208,108 +207,37 @@ class Wizard {
     }
 
     /**
-     * Establishes a connection to the GATT server of a Bluetooth device and retrieves relevant services and characteristics.
+     * Prepares a Bluetooth GATT characteristic for notifications and sets up an event listener
+     * to handle incoming characteristic value changes.
      *
-     * @param {BluetoothDevice} device The Bluetooth device to connect to and initiate GATT communication.
-     * @return {Promise<GATTContext>} A promise that resolves to a GATTContext object, which includes handles to essential characteristics (commandChar, notifyChar, and infoChar*/
-    public static async setupGATT(device: BluetoothDevice): Promise<GATTContext> {
-        if (!device.gatt) throw new Error("Device GATT not available");
-
-        const server = await device.gatt.connect();
-        console.log("Connected to GATT server");
-
-        // Get Service 3
-        const service = await server.getPrimaryService(GATTUUID.Service);
-        console.log("Found Service 3:", service.uuid);
-
-        // Get Characteristics
-        const characteristics = await service.getCharacteristics();
-
-        let commandChar: BluetoothRemoteGATTCharacteristic | undefined;
-        let notifyChar: BluetoothRemoteGATTCharacteristic | undefined;
-        let infoChar: BluetoothRemoteGATTCharacteristic | undefined;
-
-        for (const char of characteristics) {
-            console.log("Found characteristic:", char.uuid);
-
-            if (char.uuid.toLowerCase() === GATTUUID.WriteChar.toLowerCase()) {
-                commandChar = char;
-            }
-            if (char.uuid.toLowerCase() === GATTUUID.SecondaryNotify.toLowerCase()) {
-                notifyChar = char;
-            }
-            if (char.uuid.toLowerCase() === GATTUUID.NotifyChar.toLowerCase()) {
-                infoChar = char;
-            }
-        }
-
-        if (!commandChar) throw new Error("Command characteristic not found");
-        if (!infoChar) throw new Error("Info characteristic (dc272a22) not found");
-
-        return {
-            commandChar,
-            notifyChar,
-            infoChar
-        };
-    }
-
-
-    // Enable notifications on InfoChar
-    /**
-     * Enables notifications for the Bluetooth GATT characteristic.
-     * This method starts listening to characteristic value changes and processes notifications.
-     * Checks if notifications are already enabled, and if not, initiates the process.
-     * Throws an error if the required GATT characteristic is not set.
-     *
-     * @return {Promise<void> | undefined} A promise that resolves when notifications are successfully enabled,
-     *                                     or undefined if notifications are already enabled.
+     * @param {BluetoothRemoteGATTServer} server - The GATT server connected to the Bluetooth device.
+     * @return {Promise<void>} A promise that resolves once the notifications and event listener are prepared.
      */
-    public static enableNotifications(): Promise<void> | undefined {
-        if (this.notifyEnabled) return;
+    private static async prepareNotify(server: BluetoothRemoteGATTServer | undefined) {
+        if (server == null) return;
 
-        if (!this.infoChar) throw new Error("InfoChar not set");
+        // Get Service.
+        const service = await server.getPrimaryService(GATTUUID.Service);
 
-        await this.infoChar.startNotifications();
-        this.infoChar.addEventListener(
-            "characteristicvaluechanged",
-            (event: Event) => {
-                const char = event.target as BluetoothRemoteGATTCharacteristic;
-                const buf = new Uint8Array(char.value!.buffer);
+        // Prepare Pending Resolver.
+        Wizard.infoChar = await service.getCharacteristic(GATTUUID.NotifyChar);
 
-                console.log(`GATT notification received: ${buf.length} bytes`);
-                console.log(`Response: ${new TextDecoder().decode(buf)}`);
+        // Start Notify.
+        await Wizard.infoChar.startNotifications();
 
-                // Store buffer
-                this.responseBuffer = new Uint8Array(buf);
+        // Prepare Pending Resolver.
+        Wizard.infoChar.addEventListener("characteristicvaluechanged", (event) => {
+            const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
 
-                // Resolve any pending promise
-                if (this.pendingResolver) {
-                    this.pendingResolver(this.responseBuffer);
-                    this.pendingResolver = undefined;
-                }
+            console.log(`New Data: ${buf.join(", ")}`);
+
+            // Resolve Pending Resolver.
+            if (Wizard.pendingResolver) {
+                Wizard.pendingResolver(buf);
+                Wizard.pendingResolver = null;
             }
-        );
-
-        this.notifyEnabled = true;
-
-        // Optional small delay to mimic Go sleep
-        await new Promise(r => setTimeout(r, 100));
-    }
-
-    // Wait for next response (replaces Go channel)
-    waitForResponse(timeout = 3000): Promise<Uint8Array> {
-        return new Promise((resolve, reject) => {
-            this.pendingResolver = resolve;
-
-            setTimeout(() => {
-                if (this.pendingResolver) {
-                    this.pendingResolver = undefined;
-                    reject(new Error("Timeout waiting for response"));
-                }
-            }, timeout);
         });
     }
-}
 }
 
 new Wizard();
