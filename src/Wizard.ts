@@ -329,17 +329,9 @@ class Wizard {
         console.log("Notify Started");
 
         // Prepare Pending Resolver.
-        Wizard.infoChar.addEventListener("characteristicvaluechanged", (event) => {
-            const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
-
-            console.log(`New Data: ${this.decodeJSON(buf)}`);
-
-            // Resolve Pending Resolver.
-            if (Wizard.pendingResolver) {
-                Wizard.pendingResolver(buf);
-                Wizard.pendingResolver = null;
-            }
-        });
+        this.addInfoCharListener();
+        this.addNotifyCharListener();
+        this.addWriteCharListener();
     }
 
 
@@ -432,14 +424,63 @@ class Wizard {
      * @param {Uint8Array} response - The response data to be handled, in the form of a Uint8Array.
      * @return {void} This method does not return a value.
      */
-    private static handleResponse(response: Uint8Array) {
+    private static handleResponse(response: Uint8Array): void {
         const data = JSON.parse(Wizard.decodeJSON(response))
 
-        if(data.ret != undefined && data.ret == "ok") {
+        if (data.ret != undefined && data.ret == "ok") {
             Notify.success(i18next.t("common:command-success"));
         } else {
             Notify.success(i18next.t("common:command-failed"));
         }
+    }
+
+    /**
+     * Adds a listener to handle changes in the characteristic value of `Wizard.infoChar`.
+     * This method is responsible for responding to updates communicated through the characteristic,
+     * decoding the received data, and resolving any pending resolver functionality.
+     *
+     * @return {void} Nothing is returned from this method.
+     */
+    private static addInfoCharListener(): void {
+        Wizard.infoChar.addEventListener("characteristicvaluechanged", (event) => {
+            const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
+
+            console.log(`Info Data: ${this.decodeJSON(buf)}`);
+
+            // Resolve Pending Resolver.
+            if (Wizard.pendingResolver) {
+                Wizard.pendingResolver(buf);
+                Wizard.pendingResolver = null;
+            }
+        });
+    }
+
+    /**
+     * Registers an event listener for the "characteristicvaluechanged" event on the `Wizard.notifyChar` Bluetooth GATT characteristic.
+     * The event listener processes the incoming data buffer and logs the decoded data.
+     *
+     * @return {void} This method does not return any value.
+     */
+    private static addNotifyCharListener(): void {
+        Wizard.notifyChar.addEventListener("characteristicvaluechanged", (event) => {
+            const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
+
+            console.log(`Notify Data: ${this.decodeJSON(buf)}`);
+        });
+    }
+
+    /**
+     * Adds an event listener to handle characteristic value changes for the "writeChar" property.
+     * The listener processes the updated characteristic value, decodes it, and logs the resulting data.
+     *
+     * @return {void} This method does not return a value.
+     */
+    private static addWriteCharListener() {
+        Wizard.writeChar.addEventListener("characteristicvaluechanged", (event) => {
+            const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
+
+            console.log(`Write Data: ${this.decodeJSON(buf)}`);
+        });
     }
 }
 
