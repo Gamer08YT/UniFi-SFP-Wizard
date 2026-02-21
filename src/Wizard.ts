@@ -352,7 +352,7 @@ class Wizard {
      */
     public static async sendCommand(command: string, timeout: number = 3000): Promise<Uint8Array> {
         // Check if InfoChar is set.
-        if (!Wizard.infoChar) throw new Error("InfoChar not set / not connected");
+        this.debugSend(command);
 
         // Print Debug Message.
         console.log(`Sending GATT command (response expected): ${command}`);
@@ -366,8 +366,8 @@ class Wizard {
         // Prepare Pending Resolver.
         Wizard.pendingResolver = null;
 
-        // Print Debug Message.
-        console.log(`Wrote ${data.length} bytes to InfoChar`);
+        // Print Data Length.
+        this.printDataLength(data);
 
         // Send Command.
         return new Promise<Uint8Array>((resolve, reject) => {
@@ -395,10 +395,7 @@ class Wizard {
      */
     public static async sendCommandNoResponse(command: string): Promise<void> {
         // Check if InfoChar is set.
-        if (!Wizard.infoChar) throw new Error("InfoChar not set / not connected");
-
-        // Print Debug Message.
-        console.log(`Sending GATT command (no response expected): ${command}`);
+        this.debugSend(command);
 
         const encoder = new TextEncoder();
         const data = encoder.encode(command);
@@ -406,8 +403,8 @@ class Wizard {
         // Write command to the Info characteristic
         await Wizard.infoChar.writeValueWithoutResponse(data);
 
-        // Print Debug Message.
-        console.log(`Wrote ${data.length} bytes to InfoChar`);
+        // Print Data Length.
+        this.printDataLength(data);
 
         // Optional delay to give the device time to process
         await new Promise((resolve) => setTimeout(resolve, 100));
@@ -493,6 +490,31 @@ class Wizard {
 
             console.log(`Write Data: ${this.decodeJSON(buf)}`);
         });
+    }
+
+    /**
+     * Sends a GATT command for debugging purposes without expecting a response.
+     *
+     * @param {string} command - The GATT command string to be sent.
+     * @return {void} This method does not return any value.
+     */
+    private static debugSend(command: string) {
+        // Check if InfoChar is set.
+        if (!Wizard.infoChar) throw new Error("InfoChar not set / not connected");
+
+        // Print Debug Message.
+        console.log(`Sending GATT command (no response expected): ${command}`);
+    }
+
+    /**
+     * Logs the length of the provided data in bytes.
+     *
+     * @param {Uint8Array<ArrayBuffer>} data - The data whose byte length will be printed.
+     * @return {void} This method does not return a value.
+     */
+    private static printDataLength(data: Uint8Array<ArrayBuffer>) {
+        // Print Debug Message.
+        console.log(`Wrote ${data.length} bytes to InfoChar`);
     }
 }
 
