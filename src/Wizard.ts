@@ -64,6 +64,11 @@ class Wizard {
         // Enable or Disable Controls.
         Wizard.setControls(state);
 
+        if (!state) {
+            // @ts-ignore
+            Wizard.device = undefined;
+        }
+
         console.log(`Set connected state to ${state}`)
     }
 
@@ -327,9 +332,6 @@ class Wizard {
 
             // Disconnect Device via GATT.
             this.device?.gatt.disconnect();
-
-            // @ts-ignore
-            this.device = undefined;
 
             // Toggle Frontend State.
             this.setConnected(false);
