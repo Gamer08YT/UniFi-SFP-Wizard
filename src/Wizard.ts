@@ -57,6 +57,8 @@ class Wizard {
 
         // Enable or Disable Controls.
         Wizard.setControls(state);
+
+        console.log(`Set connected state to ${state}`)
     }
 
     /**
@@ -118,10 +120,10 @@ class Wizard {
                         console.log(device);
 
                         // Store Device.
-                        Wizard.setConnectedDevice(device);
-
-                        // Set Connection State.
-                        Wizard.setConnected(true);
+                        Wizard.setConnectedDevice(device).then(r => {
+                            // Set Connection State.
+                            Wizard.setConnected(true);
+                        });
                     });
                 } else {
                     console.error("Bluetooth is not available on this device.");
@@ -256,8 +258,14 @@ class Wizard {
 
         // Set GATT Event Listener.
         device.addEventListener('gattserverdisconnected', () => {
+            // Send Disconnected Notification.
+            Notify.warning(i18next.t("common:disconnected"));
+
             this.setConnected(false);
         })
+
+        // Send Connected Notification.
+        Notify.success(i18next.t("common:connected"));
 
         // Set Device Instance.
         Wizard.device = device;
@@ -290,11 +298,15 @@ class Wizard {
             // Disconnect Device via GATT.
             this.device?.gatt.disconnect();
 
+            // @ts-ignore
+            this.device = undefined;
+
             // Toggle Frontend State.
             this.setConnected(false);
         } else {
             console.error("No device connected.");
         }
+
     }
 
     /**
