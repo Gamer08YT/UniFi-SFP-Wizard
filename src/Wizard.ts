@@ -2,7 +2,7 @@ import $ from "jquery";
 import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
 import {GATTUUID} from "./GATTUUID";
-import {Confirm, Notify} from "notiflix";
+import {Confirm} from "notiflix";
 
 
 class Wizard {
@@ -52,13 +52,29 @@ class Wizard {
     }
 
     /**
+     * Initiates a system power-off sequence by sending a shutdown command*/
+    public static async poweroff(): Promise<void> {
+        return await Wizard.sendCommandNoResponse("poweroff");
+    }
+
+    /**
+     * Sends a command to control the charging mechanism and awaits a response within a specified timeout.
+     * The command is sent using the "chargeCtrl" identifier with a timeout value of 5000 milliseconds.
+     *
+     * @return {Promise<any>} A promise that resolves with the response from the "chargeCtrl" command.
+     */
+    public static async chargeControl(): Promise<any> {
+        return await Wizard.sendCommand("chargeCtrl", 5000);
+    }
+
+    /**
      * Updates the control state of the poweroff button based on the provided boolean value.
      *
      * @param {boolean} state - A flag indicating whether to enable or disable the poweroff button.
      *                          If true, the button is enabled; if false, the button is disabled.
      * @return {void} Does not return any value.
      */
-    private static setControls(state: boolean) {
+    private static setControls(state: boolean): void {
 
         $("#wizard-controls").children("button").each((index, element) => {
             if (state) {
