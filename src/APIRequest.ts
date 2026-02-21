@@ -1,4 +1,4 @@
-interface APIRequest {
+export interface APIRequest {
     type: "httpRequest";
     id: string;
     timestamp: number;

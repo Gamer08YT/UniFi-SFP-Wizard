@@ -2,6 +2,7 @@ import $ from "jquery";
 import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
 import {GATTUUID} from "./GATTUUID";
+import {APIRequest} from "./APIRequest";
 import {Confirm, Notify} from "notiflix";
 import {deflate, inflate} from "pako";
 
