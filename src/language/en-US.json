@@ -19,5 +19,8 @@
   "affiliate": "This site is not affiliated with Ubiquiti in any way.",
   "name": "Name",
   "serial": "Serial",
-  "firmware": "Firmware"
+  "firmware": "Firmware",
+  "module-message": "Fibre Module successfully read.",
+  "module-read": "Module EEPROM was read successfully, saving Data now.",
+  "module-saved": "Module EEPROM was saved successfully from Wizard."
 }

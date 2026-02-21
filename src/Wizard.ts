@@ -16,6 +16,9 @@ class Wizard {
     private static connectButton: JQuery<HTMLElement>;
     private static poweroffButton: JQuery<HTMLElement>;
     private static rebootButton: JQuery<HTMLElement>;
+    private static readButton: JQuery<HTMLElement>;
+    private static saveButton: JQuery<HTMLElement>;
+    private static writeButton: JQuery<HTMLElement>;
     private static chargeControlButton: JQuery<HTMLElement>;
 
     // Store GATT Characteristic Instances.
@@ -27,7 +30,7 @@ class Wizard {
     // Store BLE Device Instance.
     private static device: BluetoothDevice;
     private static pendingResolver: ((data: Uint8Array) => void) | null = null;
-    private static apiResolvers: Map<string, (data: any, second: any) => void> = new Map();
+    private static apiResolvers: Map<string, (data: any) => void> = new Map();
     private static service: BluetoothRemoteGATTService;
 
     private static requestCounter = 0;
@@ -68,6 +71,9 @@ class Wizard {
         if (!state) {
             // @ts-ignore
             Wizard.device = undefined;
+
+            // Clear Fields.
+            Wizard.clearFields();
         }
 
         console.log(`Set connected state to ${state}`)
@@ -109,7 +115,7 @@ class Wizard {
      */
     private static setControls(state: boolean): void {
 
-        $("#wizard-controls").children("button").each((index, element) => {
+        $("#wizard-controls").children(".btn-group").children("button").each((index, element) => {
             if (state) {
                 $(element).removeAttr("disabled");
             } else {
@@ -222,6 +228,16 @@ class Wizard {
                 Wizard.reboot().then(r => console.debug(r));
             });
         });
+
+        // Register Read Control Button.
+        Wizard.readButton.on("click", () => {
+            this.readXSFP();
+        });
+
+        // Register Save Control Button.
+        Wizard.saveButton.on("click", () => {
+            this.saveXSFP();
+        });
     }
 
     /**
@@ -245,8 +261,15 @@ class Wizard {
             }
         });
 
-        $("#page-info").text(i18next.t("common:info"));
-        $("#page-affiliate").text(i18next.t("common:affiliate"));
+        // Set Page Texts.
+        this.setPage("info", i18next.t("common:info"));
+        this.setPage("affiliate", i18next.t("common:affiliate"));
+        this.setPage("firmware", i18next.t("common:firmware"));
+        this.setPage("name", i18next.t("common:name"));
+        this.setPage("serial", i18next.t("common:serial"));
+
+        // Clear Fields.
+        Wizard.clearFields();
     }
 
     /**
@@ -278,6 +301,9 @@ class Wizard {
         Wizard.poweroffButton = $("#poweroff-wizard");
         Wizard.chargeControlButton = $("#charge-wizard");
         Wizard.rebootButton = $("#reboot-wizard");
+        Wizard.readButton = $("#read-sfp");
+        Wizard.writeButton = $("#write-sfp");
+        Wizard.saveButton = $("#save-sfp");
     }
 
     /**
@@ -315,13 +341,16 @@ class Wizard {
         await this.queryDeviceInfo();
         await this.queryFirmwareInfo();
 
-
-        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/settings`);
-        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/bt`);
-
-
         // Set Device Instance.
         Wizard.device = device;
+    }
+
+    private static async getSettings() {
+        return await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/settings`);
+    }
+
+    private static async getBluetooth() {
+        return await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/bt`);
     }
 
     /**
@@ -333,7 +362,7 @@ class Wizard {
     private static async queryDeviceInfo(): Promise<void> {
         // Query Device Info.
         await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}`).then(r => {
-            const data = (r as any);
+            const data = (r as any).body;
 
             this.setText("name", data.name);
             this.setText("serial", data.id);
@@ -567,7 +596,7 @@ class Wizard {
 
                 Wizard.apiResolvers.delete(id);
 
-                resolver(decoded.body, decoded);
+                resolver(decoded);
             }
         });
     }
@@ -859,7 +888,7 @@ class Wizard {
      */
     private static async queryFirmwareInfo(): Promise<void> {
         await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/fw`).then(r => {
-            const data = (r as any);
+            const data = (r as any).body;
 
             this.setText("firmware", data.fwv);
         });
@@ -879,6 +908,94 @@ class Wizard {
         }
 
         console.debug(`Loader ${b ? "on" : "off"}`)
+    }
+
+    /**
+     * Clears specific fields by setting their text values to a default placeholder ("-").
+     * The fields affected are "firmware", "name", and "serial".
+     *
+     * @return {void} Does not return a value.
+     */
+    private static clearFields() {
+        this.setText("firmware", "-");
+        this.setText("name", "-");
+        this.setText("serial", "-");
+    }
+
+    /**
+     * Updates the text content of the page element with the specified key.
+     *
+     * @param {string} key - The identifier for the page element to update.
+     * @param {any} value - The value to set as the text content of the page element.
+     * @return {void} This method does not return a value.
+     */
+    private setPage(key: string, value: any): void {
+        $("#page-" + key).text(value);
+    }
+
+    private setModule(key: string, value: any): void {
+        $("#sfp-" + key).text(value);
+    }
+
+    /**
+     *
+     */
+    private async readXSFP() {
+        await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Secret.Mac)}/xsfp/module/details`).then((r) => {
+            const data = (r as any).body;
+
+            /**
+             * {
+             *   "partNumber": "SFP-10GLR-31",
+             *   "rev": "A",
+             *   "vendor": "S2301169979",
+             *   "sn": "S2301169979",
+             *   "type": "sfp",
+             *   "compliance": "10G BASE-LR"
+             * }
+             */
+
+            this.setModule("part", data.partNumber);
+            this.setModule("rev", data.rev);
+            this.setModule("vendor", data.vendor);
+            this.setModule("sn", data.sn);
+            this.setModule("type", data.type);
+            this.setModule("compliance", data.compliance);
+
+            // Print Success Toast.
+            Notify.success(i18next.t("common:module-message"));
+        });
+    }
+
+    private async saveXSFP() {
+        // Start Reading of Module.
+        return await this.startReadingProcess().then(async (r) => {
+            // Show Read Notification.
+            Notify.info(i18next.t("common:module-read"));
+
+            const data = (r as any).body;
+
+            if (data.size == undefined || data.chunk == undefined) {
+                throw new Error("size or chunk required");
+            }
+
+            // Get Data from Device.
+            await this.startStreamProcess(0, data.size).then((r) => {
+                // Show Saved Notification.
+                Notify.success(i18next.t("common:module-saved"));
+            });
+        });
+    }
+
+    private async startReadingProcess() {
+        return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Secret.Mac)}/xsfp/module/start`);
+    }
+
+    private async startStreamProcess(offset: number, size: any) {
+        return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Secret.Mac)}/xsfp/module/data`, {
+            offset: offset,
+            size: size
+        });
     }
 }
 

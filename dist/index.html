@@ -51,14 +51,29 @@
                     <div class="card-body">
                         <!-- Start: Wizard Controls -->
                         <div id="wizard-controls">
-                            <button type="button" id="poweroff-wizard" disabled class="btn btn-danger">Shutdown</button>
-                            <button type="button" id="write-sfp" disabled class="btn btn-primary">Write SFP</button>
-                            <button type="button" id="read-sfp" disabled class="btn btn-primary">Read SFP</button>
-                            <button type="button" id="reboot-wizard" disabled class="btn btn-danger">Reboot</button>
-                            <button type="button" id="charge-wizard" disabled class="btn btn-warning">Charge Control
-                            </button>
+                            <div class="btn-group" role="group">
+                                <button type="button" id="poweroff-wizard" disabled class="btn btn-danger">Shutdown
+                                </button>
+                                <button type="button" id="write-sfp" disabled class="btn btn-primary">Write SFP</button>
+                                <button type="button" id="read-sfp" disabled class="btn btn-primary">Read SFP</button>
+                                <button type="button" id="save-sfp" disabled class="btn btn-primary">Save SFP</button>
+                                <button type="button" id="reboot-wizard" disabled class="btn btn-danger">Reboot</button>
+                                <button type="button" id="charge-wizard" disabled class="btn btn-warning">Charge Control
+                                </button>
+                            </div>
                         </div>
                         <!-- End: Wizard Controls -->
+                        <br>
+                        <!-- Start: SFP Module -->
+                        <div id="wizard-module">
+                            <p><b id="page-sfp-part">Part:</b> <span id="sfp-part"></span></p>
+                            <p><b id="page-sfp-rev">Rev:</b> <span id="sfp-rev"></span></p>
+                            <p><b id="page-sfp-vendor">Vendor:</b> <span id="sfp-vendor"></span></p>
+                            <p><b id="page-sfp-serial">Serial:</b> <span id="sfp-sn"></span></p>
+                            <p><b id="page-sfp-type">Type:</b> <span id="sfp-type"></span></p>
+                            <p><b id="page-sfp-compliance">Compliance:</b> <span id="sfp-compliance"></span></p>
+                        </div>
+                        <!-- End: SFP Module -->
                     </div>
                 </div>
                 <!-- End: Device Controls -->
