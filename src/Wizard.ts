@@ -5,6 +5,7 @@ import {GATTUUID} from "./GATTUUID";
 import {APIRequest} from "./APIRequest";
 import {Confirm, Notify} from "notiflix";
 import {deflate, inflate} from "pako";
+import {Secret} from "./Secret";
 
 
 class Wizard {
@@ -258,6 +259,8 @@ class Wizard {
         // Prepare GATT Notify.
         await this.prepareNotify(server).then(() => {
             console.log("Notify Prepared");
+
+            this.readDeviceInfoFromNotify();
         });
 
         // Set GATT Event Listener.
@@ -271,8 +274,8 @@ class Wizard {
         // Send Connected Notification.
         Notify.success(i18next.t("common:connected"));
 
-        const mac = Wizard.device.id.replace(/:/g, "").toUpperCase();
-        await Wizard.sendApiRequest("GET", `/api/1.0/${mac}`);
+        //const mac = Wizard.device.id.replace(/:/g, "").toUpperCase();
+        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}`);
 
         // Set Device Instance.
         Wizard.device = device;
@@ -338,8 +341,14 @@ class Wizard {
         Wizard.notifyChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.SecondaryNotify));
         //Wizard.apiNotifyChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.Service2));
 
+
         // Print Debug Message.
         console.log("Notify Service and Characteristics Retrieved");
+
+        // Prepare Pending Resolver.
+        this.addInfoCharListener();
+        this.addNotifyCharListener();
+        this.addWriteCharListener();
 
         // Start Info Notify.
         await Wizard.infoChar.startNotifications();
@@ -352,11 +361,6 @@ class Wizard {
 
         // Print Debug Message.
         console.log("Notify Started");
-
-        // Prepare Pending Resolver.
-        this.addInfoCharListener();
-        this.addNotifyCharListener();
-        this.addWriteCharListener();
     }
 
 
@@ -490,9 +494,14 @@ class Wizard {
 
         Wizard.notifyChar.addEventListener("characteristicvaluechanged", (event) => {
             const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
+
+            console.log(`Notify Data: ${buf.toString()}`);
+
+
             const decoded = Wizard.binmeDecode(buf);
 
-            console.log(`Notify Data: ${decoded}`);
+            console.log(`Notify Data:`);
+            console.log(decoded);
         });
     }
 
@@ -555,6 +564,38 @@ class Wizard {
     }
 
     /**
+     * Reads device information sent via the "characteristicvaluechanged" event from a Bluetooth GATT characteristic.
+     * The method listens for the specified event, processes the received data as JSON, and resolves the promise
+     * with the device's MAC address (if available).
+     *
+     * @return {Promise<string>} A promise that resolves with the MAC address of the device if it is successfully parsed from the received data.
+     */
+    private static async readDeviceInfoFromNotify() {
+        console.log("Reading Device Info from Notify");
+
+        return new Promise<string>((resolve) => {
+            Wizard.infoChar.addEventListener("characteristicvaluechanged", (event) => {
+                const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
+
+                try {
+                    const json = JSON.parse(new TextDecoder().decode(buf));
+
+                    console.log("Received Device Info:", json);
+
+                    if (json.id) {
+                        const mac = json.id.toLowerCase();
+                        console.log("Device MAC:", mac);
+                        resolve(mac);
+                    }
+                } catch (e) {
+                    console.warn("Invalid JSON from infoChar:", e);
+                }
+            }, {once: true});
+        });
+    }
+
+
+    /**
      * Encodes the provided header and body data into a binary format with a specified sequence number.
      * The method compresses the input data, constructs header and body sections, and combines them into
      * a final binary message.
@@ -604,6 +645,9 @@ class Wizard {
         out[3] = seq & 0xff;
         out.set(headerSection, 4);
         out.set(bodySection, 4 + headerSection.length);
+
+        console.log(out);
+
         return out;
     }
 
@@ -621,10 +665,8 @@ class Wizard {
     private static binmeDecode(data: Uint8Array) {
         let pos = 4; // skip transport header
 
-        // Header section
+        // HEADER
         const headerType = data[pos];
-        if (headerType !== 0x03) throw new Error("Invalid header type");
-
         const headerCompressed = data[pos + 2] === 1;
         const headerLen = data[pos + 8];
         pos += 9;
@@ -632,12 +674,20 @@ class Wizard {
         const headerData = data.slice(pos, pos + headerLen);
         pos += headerLen;
 
-        const headerJson = headerCompressed ? inflate(headerData) : headerData;
+        let headerJsonRaw = headerData;
+        if (headerCompressed) {
+            try {
+                headerJsonRaw = inflate(headerData);
+            } catch (e) {
+                console.warn("Header not compressed despite flag:", e);
+                headerJsonRaw = headerData;
+            }
+        }
 
-        // Body section
+        const header = JSON.parse(new TextDecoder().decode(headerJsonRaw));
+
+        // BODY
         const bodyType = data[pos];
-        if (bodyType !== 0x02) throw new Error("Invalid body type");
-
         const bodyCompressed = data[pos + 2] === 1;
         const bodyLen =
             (data[pos + 4] << 24) |
@@ -648,13 +698,22 @@ class Wizard {
         pos += 8;
 
         const bodyData = data.slice(pos, pos + bodyLen);
-        const bodyJson = bodyCompressed ? inflate(bodyData) : bodyData;
 
-        return {
-            header: JSON.parse(new TextDecoder().decode(headerJson)),
-            body: JSON.parse(new TextDecoder().decode(bodyJson))
-        };
+        let bodyJsonRaw = bodyData;
+        if (bodyCompressed) {
+            try {
+                bodyJsonRaw = inflate(bodyData);
+            } catch (e) {
+                console.warn("Body not compressed despite flag:", e);
+                bodyJsonRaw = bodyData;
+            }
+        }
+
+        const body = JSON.parse(new TextDecoder().decode(bodyJsonRaw));
+
+        return {header, body};
     }
+
 
     /**
      * Sends an API request using the specified HTTP method, path, and request body.
@@ -663,6 +722,8 @@ class Wizard {
      * @param bodyObj
      * @param {string} path*/
     private static async sendApiRequest(method: "GET" | "POST", path: string, bodyObj: any = {}) {
+        console.log(`Sending API Request: ${method} ${path}`);
+
         const [id, seq] = Wizard.nextRequestId();
 
         const req: APIRequest = {
@@ -683,6 +744,15 @@ class Wizard {
         await Wizard.writeChar.writeValue(packet);
     }
 
+    /**
+     * Processes a MAC address by removing all colons and converting it to lowercase.
+     *
+     * @param {string} mac - The MAC address to be processed, typically in the format with colons (e.g., "00:1A:2B:3C:4D:5E").
+     * @return {string} The processed MAC address as a string without colons, converted to lowercase.
+     */
+    private static handleMAC(mac: string): string {
+        return mac.replace(/:/g, "").toLowerCase();
+    }
 }
 
 new
