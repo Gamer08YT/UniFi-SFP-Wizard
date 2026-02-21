@@ -25,6 +25,8 @@ class Wizard {
     private static pendingResolver: ((data: Uint8Array) => void) | null = null;
     private static service: BluetoothRemoteGATTService;
 
+    private static requestCounter = 0;
+
 
     constructor() {
         // Prepare Locale.
@@ -266,6 +268,10 @@ class Wizard {
 
         // Send Connected Notification.
         Notify.success(i18next.t("common:connected"));
+
+        this.sendCommand("getInfo", 10000).then(response => {
+            console.warn(response);
+        });
 
         // Set Device Instance.
         Wizard.device = device;
@@ -524,10 +530,72 @@ class Wizard {
      * @param {Uint8Array<ArrayBuffer>} data - The data whose byte length will be printed.
      * @return {void} This method does not return a value.
      */
-    private static printDataLength(data: Uint8Array<ArrayBuffer>) {
+    private static printDataLength(data: Uint8Array<ArrayBuffer>): void {
         // Print Debug Message.
         console.log(`Wrote ${data.length} bytes to InfoChar`);
     }
+
+
+    /**
+     * Generates the next unique request identifier.
+     *
+     * @return {Array} A tuple where the first element is a string representing the generated request ID,
+     * and the second element is a number that represents the lower 16 bits of the request counter.
+     */
+    private static nextRequestId(): [string, number] {
+        Wizard.requestCounter++;
+
+        const id = Wizard.requestCounter.toString().padStart(12, "0");
+        return [
+            `00000000-0000-0000-0000-${id}`,
+            Wizard.requestCounter & 0xffff
+        ];
+    }
+
+    private static binmeEncode(headerJson: Uint8Array, body: Uint8Array, seq: number): Uint8Array {
+        const compressedHeader = deflate(headerJson);
+        const compressedBody = deflate(body);
+
+        // Header section (9 bytes + compressed header)
+        const headerSection = new Uint8Array(9 + compressedHeader.length);
+
+        headerSection[0] = 0x03;
+        headerSection[1] = 0x01;
+        headerSection[2] = 0x01;
+        headerSection[3] = 0x01;
+        headerSection[4] = 0x00;
+        headerSection[5] = 0x00;
+        headerSection[6] = 0x00;
+        headerSection[7] = 0x00;
+        headerSection[8] = compressedHeader.length;
+        headerSection.set(compressedHeader, 9);
+
+        // Body section (8 bytes + compressed body)
+        const bodySection = new Uint8Array(8 + compressedBody.length);
+
+        bodySection[0] = 0x02;
+        bodySection[1] = 0x01;
+        bodySection[2] = 0x01;
+        bodySection[3] = 0x00;
+        bodySection[4] = (compressedBody.length >>> 24) & 0xff;
+        bodySection[5] = (compressedBody.length >>> 16) & 0xff;
+        bodySection[6] = (compressedBody.length >>> 8) & 0xff;
+        bodySection[7] = compressedBody.length & 0xff;
+        bodySection.set(compressedBody, 8);
+        const totalLen = headerSection.length + bodySection.length + 4;
+        const out = new Uint8Array(totalLen);
+
+        // Transport header
+        out[0] = (totalLen >>> 8) & 0xff;
+        out[1] = totalLen & 0xff;
+        out[2] = (seq >>> 8) & 0xff;
+        out[3] = seq & 0xff;
+        out.set(headerSection, 4);
+        out.set(bodySection, 4 + headerSection.length);
+        return out;
+    }
 }
 
-new Wizard();
+new
+
+Wizard();
