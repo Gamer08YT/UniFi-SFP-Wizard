@@ -655,6 +655,33 @@ class Wizard {
         };
     }
 
+    /**
+     * Sends an API request using the specified HTTP method, path, and request body.
+     *
+     * @param {"GET" | "POST"} method - The HTTP method to use for the request.
+     * @param bodyObj
+     * @param {string} path*/
+    private static async sendApiRequest(method: "GET" | "POST", path: string, bodyObj: any = {}) {
+        const [id, seq] = Wizard.nextRequestId();
+
+        const req: APIRequest = {
+            type: "httpRequest",
+            id,
+            timestamp: Date.now(),
+            method,
+            path,
+            headers: {}
+        };
+
+        const headerJson = new TextEncoder().encode(JSON.stringify(req));
+        const bodyJson = new TextEncoder().encode(JSON.stringify(bodyObj));
+
+        const packet = Wizard.binmeEncode(headerJson, bodyJson, seq);
+
+        await Wizard.writeChar.writeValue(packet);
+    }
+
+
 }
 
 new
