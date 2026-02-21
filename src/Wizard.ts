@@ -345,10 +345,20 @@ class Wizard {
         Wizard.device = device;
     }
 
+    /**
+     * Retrieves the settings by sending an API request to the specified endpoint.
+     *
+     * @return {Promise<Object>} A promise that resolves to the response data containing the settings.
+     */
     private static async getSettings() {
         return await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/settings`);
     }
 
+    /**
+     * Sends an API request to retrieve Bluetooth information for the specified MAC address.
+     *
+     * @return {Promise<Object>} A promise that resolves with the Bluetooth data in the response.
+     */
     private static async getBluetooth() {
         return await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/bt`);
     }
@@ -834,8 +844,15 @@ class Wizard {
         const headerJson = new TextEncoder().encode(JSON.stringify(req));
         const bodyJson = new TextEncoder().encode(JSON.stringify(bodyObj));
 
+        // Debug Body Field.
+        if (bodyObj != undefined) {
+            console.log("Body:", bodyObj);
+        }
+
+        // Encode Packet.
         const packet = Wizard.binmeEncode(headerJson, bodyJson, seq);
 
+        // Return Promise for Callback.
         return new Promise((resolve) => {
             // Resolver registration.
             Wizard.apiResolvers.set(id, resolve);
@@ -967,6 +984,13 @@ class Wizard {
         });
     }
 
+    /**
+     * Initiates the process of reading data from a module and saving it.
+     *
+     * The method handles notifications for successful read and save operations.
+     * It ensures the presence of necessary data properties before starting the data stream process.
+     *
+     * @return {Promise<void*/
     private async saveXSFP() {
         // Start Reading of Module.
         return await this.startReadingProcess().then(async (r) => {
@@ -987,10 +1011,23 @@ class Wizard {
         });
     }
 
+    /**
+     * Initiates the reading process by sending a GET request to the specified API endpoint
+     * with the formatted MAC address.
+     *
+     * @return {Promise<Object>} A promise that resolves to the response of the API request.
+     */
     private async startReadingProcess() {
         return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Secret.Mac)}/xsfp/module/start`);
     }
 
+    /**
+     * Initiates a stream process by sending an API request to retrieve data.
+     *
+     * @param {number} offset - The starting point or position for the data retrieval.
+     * @param {*} size - The size or amount of data to be retrieved.
+     * @return {Promise<any>} A promise that resolves with the response from the API request.
+     */
     private async startStreamProcess(offset: number, size: any) {
         return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Secret.Mac)}/xsfp/module/data`, {
             offset: offset,
