@@ -2,7 +2,7 @@ import $ from "jquery";
 import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
 import {GATTUUID} from "./GATTUUID";
-import {Confirm} from "notiflix";
+import {Confirm, Notify} from "notiflix";
 
 
 class Wizard {
@@ -72,7 +72,9 @@ class Wizard {
      * @return {Promise<any>} A promise that resolves with the response from the "chargeCtrl" command.
      */
     public static async chargeControl(): Promise<any> {
-        return await Wizard.sendCommand("chargeCtrl", 5000);
+        return await Wizard.sendCommand("chargeCtrl", 5000).then(response => {
+            this.handleResponse(response);
+        });
     }
 
     /**
@@ -317,6 +319,9 @@ class Wizard {
         Wizard.notifyChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.SecondaryNotify));
         //Wizard.apiNotifyChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.Service2));
 
+        // Print Debug Message.
+        console.log("Notify Service and Characteristics Retrieved");
+
         // Start Notify.
         await Wizard.infoChar.startNotifications();
 
@@ -418,6 +423,23 @@ class Wizard {
      */
     private static decodeJSON(buf: Uint8Array<ArrayBufferLike>): string {
         return new TextDecoder().decode(new Uint8Array(buf));
+    }
+
+    /**
+     * Processes and handles the given response data by decoding and parsing it.
+     * Depending on the parsed result, it triggers success or failure notifications.
+     *
+     * @param {Uint8Array} response - The response data to be handled, in the form of a Uint8Array.
+     * @return {void} This method does not return a value.
+     */
+    private static handleResponse(response: Uint8Array) {
+        const data = JSON.parse(Wizard.decodeJSON(response))
+
+        if(data.ret != undefined && data.ret == "ok") {
+            Notify.success(i18next.t("common:command-success"));
+        } else {
+            Notify.success(i18next.t("common:command-failed"));
+        }
     }
 }
 

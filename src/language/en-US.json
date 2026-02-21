@@ -8,5 +8,7 @@
   "shutdown-title": "Shutdown",
   "shutdown-message": "Are you sure you want to shutdown the device?",
   "charge-title": "Charge Control",
-  "charge-message": "Are you sure you want to stop charging the device?"
+  "charge-message": "Are you sure you want to stop charging the device?",
+  "command-success": "Command successful",
+  "command-failed": "Command failed"
 }
