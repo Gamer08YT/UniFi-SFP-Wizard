@@ -27,6 +27,7 @@ class Wizard {
     // Store BLE Device Instance.
     private static device: BluetoothDevice;
     private static pendingResolver: ((data: Uint8Array) => void) | null = null;
+    private static apiResolvers: Map<string, (data: any) => void> = new Map();
     private static service: BluetoothRemoteGATTService;
 
     private static requestCounter = 0;
@@ -297,7 +298,9 @@ class Wizard {
         Notify.success(i18next.t("common:connected"));
 
         //const mac = Wizard.device.id.replace(/:/g, "").toUpperCase();
-        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}`);
+        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}`).then(r => {
+            console.error(r);
+        })
         await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/settings`);
         await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/bt`);
         await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/fw`);
@@ -515,15 +518,26 @@ class Wizard {
         console.log("Adding NotifyChar Listener");
 
         Wizard.notifyChar.addEventListener("characteristicvaluechanged", (event) => {
+            // Parse Array from Buffer.
             const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
 
-            console.log(`Notify Data: ${buf.toString()}`);
-
-
+            // Decode Byte Array to Object.
             const decoded = Wizard.binmeDecode(buf);
 
-            console.log(`Notify Data:`);
-            console.log(decoded);
+            // Print Debug Message.
+            console.log("API Response:", decoded);
+
+            // Parse ID from Header.
+            const id = decoded.header.id;
+
+            // Check if API Response contains callback ID.
+            if (Wizard.apiResolvers.has(id)) {
+                const resolver = Wizard.apiResolvers.get(id)!;
+
+                Wizard.apiResolvers.delete(id);
+
+                resolver(decoded.body);
+            }
         });
     }
 
@@ -762,8 +776,14 @@ class Wizard {
 
         const packet = Wizard.binmeEncode(headerJson, bodyJson, seq);
 
-        // @ts-ignore
-        await Wizard.writeChar.writeValue(packet);
+        return new Promise((resolve) => {
+            // Resolver registration.
+            Wizard.apiResolvers.set(id, resolve);
+
+            // Send Packet.
+            // @ts-ignore
+            Wizard.writeChar.writeValue(packet);
+        });
     }
 
     /**
