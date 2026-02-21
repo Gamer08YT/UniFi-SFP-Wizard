@@ -322,8 +322,14 @@ class Wizard {
         // Print Debug Message.
         console.log("Notify Service and Characteristics Retrieved");
 
-        // Start Notify.
+        // Start Info Notify.
         await Wizard.infoChar.startNotifications();
+
+        // Print Debug Message.
+        console.log("Info Notify Started");
+
+        // Start Notify.
+        await Wizard.notifyChar.startNotifications();
 
         // Print Debug Message.
         console.log("Notify Started");
