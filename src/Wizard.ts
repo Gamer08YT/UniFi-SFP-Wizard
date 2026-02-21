@@ -17,6 +17,7 @@ class Wizard {
     // Store GATT Characteristic Instances.
     private static infoChar: BluetoothRemoteGATTCharacteristic;
     private static apiNotifyChar: BluetoothRemoteGATTCharacteristic;
+    private static writeChar: BluetoothRemoteGATTCharacteristic;
     private static notifyChar: BluetoothRemoteGATTCharacteristic;
 
     // Store BLE Device Instance.
@@ -311,9 +312,10 @@ class Wizard {
         Wizard.service = await server.getPrimaryService(this.normalizeUuid(GATTUUID.Service));
 
         // Prepare Pending Resolver.
+        Wizard.writeChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.WriteChar));
         Wizard.infoChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.NotifyChar));
         Wizard.notifyChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.SecondaryNotify));
-        Wizard.apiNotifyChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.Service2));
+        //Wizard.apiNotifyChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.Service2));
 
         // Start Notify.
         await Wizard.infoChar.startNotifications();
