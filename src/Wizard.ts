@@ -3,7 +3,7 @@ import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
 import {GATTUUID} from "./GATTUUID";
 import {APIRequest} from "./APIRequest";
-import {Confirm, Notify} from "notiflix";
+import {Confirm, Loading, Notify} from "notiflix";
 import {deflate, inflate} from "pako";
 import {Secret} from "./Secret";
 
@@ -27,7 +27,7 @@ class Wizard {
     // Store BLE Device Instance.
     private static device: BluetoothDevice;
     private static pendingResolver: ((data: Uint8Array) => void) | null = null;
-    private static apiResolvers: Map<string, (data: any) => void> = new Map();
+    private static apiResolvers: Map<string, (data: any, second: any) => void> = new Map();
     private static service: BluetoothRemoteGATTService;
 
     private static requestCounter = 0;
@@ -132,6 +132,9 @@ class Wizard {
                 if (available) {
                     console.log("Bluetooth is available on this device.");
 
+                    // Set Page Loader active.
+                    this.setLoader(true);
+
                     // Connect to device.
                     // @ts-ignore
                     navigator.bluetooth.requestDevice({
@@ -144,7 +147,14 @@ class Wizard {
                         Wizard.setConnectedDevice(device).then(r => {
                             // Set Connection State.
                             Wizard.setConnected(true);
+
+                            // Disable Loader.
+                            this.setLoader(false);
                         });
+                    }).catch(error => {
+                        this.setLoader(false);
+
+                        console.error(error);
                     });
                 } else {
                     console.error("Bluetooth is not available on this device.");
@@ -234,6 +244,8 @@ class Wizard {
                 }
             }
         });
+
+        $("#page-info").text(i18next.t("common:info"));
     }
 
     /**
@@ -297,16 +309,34 @@ class Wizard {
         // Send Connected Notification.
         Notify.success(i18next.t("common:connected"));
 
-        //const mac = Wizard.device.id.replace(/:/g, "").toUpperCase();
-        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}`).then(r => {
-            console.error(r);
-        })
+
+        // Query Device Meta.
+        await this.queryDeviceInfo();
+        await this.queryFirmwareInfo();
+
+
         await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/settings`);
         await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/bt`);
-        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/fw`);
+
 
         // Set Device Instance.
         Wizard.device = device;
+    }
+
+    /**
+     * Queries the device information by making an API request and processes the received data.
+     * Updates the device name and serial fields with the retrieved information.
+     *
+     * @return {void} This method does not return any value.
+     */
+    private static async queryDeviceInfo(): Promise<void> {
+        // Query Device Info.
+        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}`).then(r => {
+            const data = (r as any);
+
+            this.setText("name", data.name);
+            this.setText("serial", data.id);
+        });
     }
 
     /**
@@ -536,7 +566,7 @@ class Wizard {
 
                 Wizard.apiResolvers.delete(id);
 
-                resolver(decoded.body);
+                resolver(decoded.body, decoded);
             }
         });
     }
@@ -794,6 +824,60 @@ class Wizard {
      */
     private static handleMAC(mac: string): string {
         return mac.replace(/:/g, "").toLowerCase();
+    }
+
+    /**
+     * Updates the value of the specified input field corresponding to the given name.
+     *
+     * @param {string} name - The name identifier used to locate the input field.
+     * @param {string} value - The value to be set for the input field.
+     * @return {void} This method does not return a value.
+     */
+    private static setValue(name: string, value: string): void {
+        $("#device-" + name).val(value);
+    }
+
+    /**
+     * Sets the text content of an HTML element with a specific ID based on the provided name and value.
+     *
+     * @param {string} name - The identifier used to construct the HTML element's ID.
+     * @param {string} value - The text content to be set for the identified HTML element.
+     * @return {void} This method does not return a value.
+     */
+    private static setText(name: string, value: string) {
+        $("#device-" + name).text(value);
+    }
+
+    /**
+     * Queries the firmware information of a device and updates the pertinent UI field.
+     *
+     * This method uses an API request to retrieve the firmware information for the specified device.
+     * It extracts the firmware name from the response data and updates the UI accordingly.
+     *
+     * @return {Promise<void>} A promise that resolves when the firmware information has been retrieved and processed.
+     */
+    private static async queryFirmwareInfo(): Promise<void> {
+        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/fw`).then(r => {
+            const data = (r as any);
+
+            this.setText("firmware", data.fwv);
+        });
+    }
+
+    /**
+     * Toggles the loading state by enabling or disabling the loader.
+     *
+     * @param {boolean} b - A boolean value where `true` activates the loader and `false` deactivates it.
+     * @return {void} This method does not return a value.
+     */
+    private static setLoader(b: boolean): void {
+        if (b) {
+            Loading.dots();
+        } else {
+            Loading.remove();
+        }
+
+        console.debug(`Loader ${b ? "on" : "off"}`)
     }
 }
 

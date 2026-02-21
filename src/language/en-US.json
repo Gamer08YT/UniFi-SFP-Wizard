@@ -14,5 +14,6 @@
   "command-success": "Command successful",
   "command-failed": "Command failed",
   "reboot-title": "Reboot",
-  "reboot-message": "Are you sure you want to reboot the device?"
+  "reboot-message": "Are you sure you want to reboot the device?",
+  "info": "Welcome to this Tool, you need to connect to the device via bluetooth first."
 }
