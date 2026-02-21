@@ -161,15 +161,15 @@ class Wizard {
         // Register Shutdown Button. Click Listener.
         Wizard.poweroffButton.on("click", () => {
             Confirm.show(i18next.t("common:shutdown-title"), i18next.t("common:shutdown-message"), i18next.t("common:yes"), i18next.t("common:no"), () => {
-                Wizard.poweroff();
+                Wizard.poweroff().then(r => console.debug(r));
             });
         });
 
         // Register Charge Control Button.
         Wizard.chargeControlButton.on("click", () => {
-            Confirm.show(i18next.t("common:shutdown-title"), i18next.t("common:shutdown-message"), i18next.t("common:yes"), i18next.t("common:no"), () => {
+            Confirm.show(i18next.t("common:charge-title"), i18next.t("common:charge-message"), i18next.t("common:yes"), i18next.t("common:no"), () => {
                 Wizard.chargeControl().then(response => {
-                    console.log(response);
+                    console.debug(response);
                 });
             });
 
@@ -225,7 +225,7 @@ class Wizard {
     private prepareDOM(): void {
         Wizard.connectButton = $("#connect-wizard");
         Wizard.poweroffButton = $("#poweroff-wizard");
-        Wizard.chargeControlButton = $("#charge-control-wizard");
+        Wizard.chargeControlButton = $("#charge-wizard");
     }
 
     /**
@@ -317,7 +317,7 @@ class Wizard {
         Wizard.infoChar.addEventListener("characteristicvaluechanged", (event) => {
             const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
 
-            console.log(`New Data: ${buf.join(", ")}`);
+            console.log(`New Data: ${this.decodeJSON(buf)}`);
 
             // Resolve Pending Resolver.
             if (Wizard.pendingResolver) {
@@ -398,6 +398,16 @@ class Wizard {
 
         // Optional delay to give the device time to process
         await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+
+    /**
+     * Decodes a JSON object from a given buffer.
+     *
+     * @param {Uint8Array<ArrayBuffer>} buf - The buffer containing encoded JSON data.
+     * @return {string} The decoded JSON string.
+     */
+    private static decodeJSON(buf: Uint8Array<ArrayBufferLike>): string {
+        return new TextDecoder().decode(new Uint8Array(buf));
     }
 }
 
