@@ -59,11 +59,15 @@ class Wizard {
      * @return {void} Does not return any value.
      */
     private static setControls(state: boolean) {
-        if (state) {
-            Wizard.poweroffButton.removeAttr("disabled");
-        } else {
-            Wizard.poweroffButton.attr("disabled", "disabled");
-        }
+
+        $("#wizard-controls").children("button").each((index, element) => {
+            if (state) {
+                $(element).removeAttr("disabled");
+            } else {
+                $(element).attr("disabled", "disabled");
+            }
+        });
+
     }
 
     /**
