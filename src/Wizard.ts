@@ -12,6 +12,7 @@ class Wizard {
     // Store DOM Element Intances.
     private static connectButton: JQuery<HTMLElement>;
     private static poweroffButton: JQuery<HTMLElement>;
+    private static chargeControlButton: JQuery<HTMLElement>;
 
     // Store BLE Device Instance.
     private static device: BluetoothDevice;
@@ -54,7 +55,7 @@ class Wizard {
     /**
      * Initiates a system power-off sequence by sending a shutdown command*/
     public static async poweroff(): Promise<void> {
-        return await Wizard.sendCommandNoResponse("poweroff");
+        return await Wizard.sendCommandNoResponse("powerOff");
     }
 
     /**
@@ -160,8 +161,18 @@ class Wizard {
         // Register Shutdown Button. Click Listener.
         Wizard.poweroffButton.on("click", () => {
             Confirm.show(i18next.t("common:shutdown-title"), i18next.t("common:shutdown-message"), i18next.t("common:yes"), i18next.t("common:no"), () => {
-                Wizard.sendCommandNoResponse("shutdown");
+                Wizard.poweroff();
             });
+        });
+
+        // Register Charge Control Button.
+        Wizard.chargeControlButton.on("click", () => {
+            Confirm.show(i18next.t("common:shutdown-title"), i18next.t("common:shutdown-message"), i18next.t("common:yes"), i18next.t("common:no"), () => {
+                Wizard.chargeControl().then(response => {
+                    console.log(response);
+                });
+            });
+
         });
     }
 
@@ -214,6 +225,7 @@ class Wizard {
     private prepareDOM(): void {
         Wizard.connectButton = $("#connect-wizard");
         Wizard.poweroffButton = $("#poweroff-wizard");
+        Wizard.chargeControlButton = $("#charge-control-wizard");
     }
 
     /**
