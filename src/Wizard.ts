@@ -14,10 +14,16 @@ class Wizard {
     private static poweroffButton: JQuery<HTMLElement>;
     private static chargeControlButton: JQuery<HTMLElement>;
 
+    // Store GATT Characteristic Instances.
+    private static infoChar: BluetoothRemoteGATTCharacteristic;
+    private static apiNotifyChar: BluetoothRemoteGATTCharacteristic;
+    private static notifyChar: BluetoothRemoteGATTCharacteristic;
+
     // Store BLE Device Instance.
     private static device: BluetoothDevice;
-    private static infoChar: BluetoothRemoteGATTCharacteristic;
     private static pendingResolver: ((data: Uint8Array) => void) | null = null;
+    private static service: BluetoothRemoteGATTService;
+
 
     constructor() {
         // Prepare Locale.
@@ -302,10 +308,12 @@ class Wizard {
         console.log("Preparing Notify");
 
         // Get Service.
-        const service = await server.getPrimaryService(this.normalizeUuid(GATTUUID.Service));
+        Wizard.service = await server.getPrimaryService(this.normalizeUuid(GATTUUID.Service));
 
         // Prepare Pending Resolver.
-        Wizard.infoChar = await service.getCharacteristic(this.normalizeUuid(GATTUUID.NotifyChar));
+        Wizard.infoChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.NotifyChar));
+        Wizard.notifyChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.SecondaryNotify));
+        Wizard.apiNotifyChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.Service2));
 
         // Start Notify.
         await Wizard.infoChar.startNotifications();
