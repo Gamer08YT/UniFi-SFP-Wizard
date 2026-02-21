@@ -248,7 +248,7 @@ class Wizard {
      * @param {BluetoothDevice} device - The Bluetooth device to connect to and set as the active device.
      * @return {Promise<void>} A promise that resolves once the device is connected and notifications are prepared.
      */
-    private static async setConnectedDevice(device: BluetoothDevice) {
+    private static async setConnectedDevice(device: BluetoothDevice): Promise<void> {
         if (!device.gatt) return;
 
         // Try to connect to a device.
@@ -270,9 +270,8 @@ class Wizard {
         // Send Connected Notification.
         Notify.success(i18next.t("common:connected"));
 
-        this.sendCommand("getInfo", 10000).then(response => {
-            console.warn(response);
-        });
+        const mac = Wizard.device.id.replace(/:/g, "").toUpperCase();
+        await Wizard.sendApiRequest("GET", `/api/1.0/${mac}`);
 
         // Set Device Instance.
         Wizard.device = device;
@@ -480,18 +479,19 @@ class Wizard {
     }
 
     /**
-     * Registers an event listener for the "characteristicvaluechanged" event on the `Wizard.notifyChar` Bluetooth GATT characteristic.
-     * The event listener processes the incoming data buffer and logs the decoded data.
+     * Adds a listener for the "characteristicvaluechanged" event on the NotifyChar characteristic.
+     * When the event is triggered, it decodes the received data and logs it to the console.
      *
-     * @return {void} This method does not return any value.
+     * @return {void} This method does not return a value.
      */
     private static addNotifyCharListener(): void {
         console.log("Adding NotifyChar Listener");
 
         Wizard.notifyChar.addEventListener("characteristicvaluechanged", (event) => {
             const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
+            const decoded = Wizard.binmeDecode(buf);
 
-            console.log(`Notify Data: ${this.decodeJSON(buf)}`);
+            console.log(`Notify Data: ${decoded}`);
         });
     }
 
@@ -678,9 +678,9 @@ class Wizard {
 
         const packet = Wizard.binmeEncode(headerJson, bodyJson, seq);
 
+        // @ts-ignore
         await Wizard.writeChar.writeValue(packet);
     }
-
 
 }
 
