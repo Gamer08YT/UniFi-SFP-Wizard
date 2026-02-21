@@ -1,42 +1,73 @@
-<html lang="en-US">
+<html lang="en-US" data-bs-theme="dark">
 <head>
     <title>UniFi SFP Wizard</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+
+    <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-<!-- Start: Container -->
-<div class="container">
-    <h1>UniFi SFP Wizard</h1>
-    <p id="page-info">This is the UniFi SFP Wizard.</p>
 
-    <img height="200rem" width="auto" alt="UniFi SFP Wizard"
-         src="https://images.svc.ui.com/?u=https%3A%2F%2Fcdn.ecomm.ui.com%2Fproducts%2Fc173c693-c05c-4d8a-ba86-e544fbe42633%2Fa07eba13-9222-4789-bb1d-20e58048a31f.png&q=75&w=3840">
-
-    <div class="controls">
-        <button type="button" id="connect-wizard" class="btn btn-primary">Connect</button>
-
-        <!-- Start: Device Info -->
-        <div id="device-info">
-            <p>Name: <span id="device-name"></span></p>
-            <p>Serial: <span id="device-serial"></span></p>
-            <p>Firmware: <span id="device-firmware"></span></p>
+<main class="flex-grow-1">
+    <!-- Start: Container -->
+    <div class="container" id="page-container">
+        <div class="hero">
+            <br>
+            <h1>UniFi SFP Wizard</h1>
+            <p id="page-info"></p>
+            <b id="page-affiliate"></b>
+            <br>
+            <br>
         </div>
-        <!-- End: Device Info -->
 
-        <!-- Start: Wizard Controls -->
-        <div id="wizard-controls">
-            <button type="button" id="poweroff-wizard" disabled class="btn btn-danger">Shutdown</button>
-            <button type="button" id="write-sfp" disabled class="btn btn-primary">Write SFP</button>
-            <button type="button" id="read-sfp" disabled class="btn btn-primary">Read SFP</button>
-            <button type="button" id="reboot-wizard" disabled class="btn btn-danger">Reboot</button>
-            <button type="button" id="charge-wizard" disabled class="btn btn-warning">Charge Control</button>
+        <div class="row align-items-start">
+            <div class="col-5">
+                <!-- Start: Device Card -->
+                <div class="card">
+                    <img style="padding: 1.5rem" class="card-img-top" alt="UniFi SFP Wizard"
+                         src="https://images.svc.ui.com/?u=https%3A%2F%2Fcdn.ecomm.ui.com%2Fproducts%2Fc173c693-c05c-4d8a-ba86-e544fbe42633%2Fa07eba13-9222-4789-bb1d-20e58048a31f.png&q=75&w=3840">
+
+                    <div class="card-body">
+                        <!-- Start: Device Info -->
+                        <div id="device-info">
+                            <p><b id="page-name">Name:</b> <span id="device-name"></span></p>
+                            <p><b id="page-serial">Serial:</b> <span id="device-serial"></span></p>
+                            <p><b id="page-firmware">Firmware:</b> <span id="device-firmware"></span></p>
+                        </div>
+                        <!-- End: Device Info -->
+
+                        <!-- Start: Device Connect -->
+                        <button type="button" id="connect-wizard" class="btn btn-primary">Connect</button>
+                        <!-- End: Device Connect -->
+                    </div>
+                </div>
+                <!-- End: Device Card -->
+            </div>
+
+            <div class="col">
+                <!-- Start: Device Controls -->
+                <div class="card">
+                    <div class="card-body">
+                        <!-- Start: Wizard Controls -->
+                        <div id="wizard-controls">
+                            <button type="button" id="poweroff-wizard" disabled class="btn btn-danger">Shutdown</button>
+                            <button type="button" id="write-sfp" disabled class="btn btn-primary">Write SFP</button>
+                            <button type="button" id="read-sfp" disabled class="btn btn-primary">Read SFP</button>
+                            <button type="button" id="reboot-wizard" disabled class="btn btn-danger">Reboot</button>
+                            <button type="button" id="charge-wizard" disabled class="btn btn-warning">Charge Control
+                            </button>
+                        </div>
+                        <!-- End: Wizard Controls -->
+                    </div>
+                </div>
+                <!-- End: Device Controls -->
+            </div>
         </div>
-        <!-- End: Wizard Controls -->
+
     </div>
-</div>
-<!-- End: Container -->
+    <!-- End: Container -->
+</main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"

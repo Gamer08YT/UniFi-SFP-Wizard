@@ -246,6 +246,7 @@ class Wizard {
         });
 
         $("#page-info").text(i18next.t("common:info"));
+        $("#page-affiliate").text(i18next.t("common:affiliate"));
     }
 
     /**
