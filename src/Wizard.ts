@@ -3,6 +3,7 @@ import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
 import {GATTUUID} from "./GATTUUID";
 import {Confirm, Notify} from "notiflix";
+import {deflate, inflate} from "pako";
 
 
 class Wizard {
@@ -552,6 +553,16 @@ class Wizard {
         ];
     }
 
+    /**
+     * Encodes the provided header and body data into a binary format with a specified sequence number.
+     * The method compresses the input data, constructs header and body sections, and combines them into
+     * a final binary message.
+     *
+     * @param {Uint8Array} headerJson The binary representation of the header data to be encoded.
+     * @param {Uint8Array} body The binary representation of the body data to be encoded.
+     * @param {number} seq The sequence number to be included in the transport header of the encoded message.
+     * @return {Uint8Array} A Uint8Array containing the fully encoded binary message.
+     */
     private static binmeEncode(headerJson: Uint8Array, body: Uint8Array, seq: number): Uint8Array {
         const compressedHeader = deflate(headerJson);
         const compressedBody = deflate(body);
@@ -594,6 +605,56 @@ class Wizard {
         out.set(bodySection, 4 + headerSection.length);
         return out;
     }
+
+
+    /**
+     * Decodes a binary-encoded data structure with a specific format containing headers and body sections.
+     *
+     * The method extracts and decodes both the header and body sections, supporting optional compression on both.
+     * Returns the parsed header and body as JavaScript objects.
+     *
+     * @param {Uint8Array} data The binary data to decode, structured with defined header and body sections.
+     * @return {{header: object, body: object}} An object containing the decoded header and body as parsed JSON objects.
+     * @throws {Error} If the header or body type is invalid.
+     */
+    private static binmeDecode(data: Uint8Array) {
+        let pos = 4; // skip transport header
+
+        // Header section
+        const headerType = data[pos];
+        if (headerType !== 0x03) throw new Error("Invalid header type");
+
+        const headerCompressed = data[pos + 2] === 1;
+        const headerLen = data[pos + 8];
+        pos += 9;
+
+        const headerData = data.slice(pos, pos + headerLen);
+        pos += headerLen;
+
+        const headerJson = headerCompressed ? inflate(headerData) : headerData;
+
+        // Body section
+        const bodyType = data[pos];
+        if (bodyType !== 0x02) throw new Error("Invalid body type");
+
+        const bodyCompressed = data[pos + 2] === 1;
+        const bodyLen =
+            (data[pos + 4] << 24) |
+            (data[pos + 5] << 16) |
+            (data[pos + 6] << 8) |
+            data[pos + 7];
+
+        pos += 8;
+
+        const bodyData = data.slice(pos, pos + bodyLen);
+        const bodyJson = bodyCompressed ? inflate(bodyData) : bodyData;
+
+        return {
+            header: JSON.parse(new TextDecoder().decode(headerJson)),
+            body: JSON.parse(new TextDecoder().decode(bodyJson))
+        };
+    }
+
 }
 
 new
