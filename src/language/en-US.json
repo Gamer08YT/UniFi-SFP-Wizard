@@ -1,5 +1,10 @@
 {
   "enable-flag": "Open about://flags and enable #experimental-web-platform-features to use Web Bluetooth.",
   "connect": "Connect",
-  "disconnect": "Disconnect"
+  "disconnect": "Disconnect",
+  "shutdown": "Shutdown",
+  "yes": "Yes",
+  "no": "No",
+  "shutdown-title": "Shutdown",
+  "shutdown-message": "Are you sure you want to shutdown the device?"
 }

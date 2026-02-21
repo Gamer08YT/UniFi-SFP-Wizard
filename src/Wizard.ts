@@ -2,6 +2,7 @@ import $ from "jquery";
 import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
 import {GATTUUID} from "./GATTUUID";
+import {Confirm, Notify} from "notiflix";
 
 
 class Wizard {
@@ -81,8 +82,8 @@ class Wizard {
                     // Connect to device.
                     // @ts-ignore
                     navigator.bluetooth.requestDevice({
-                        filters: [{namePrefix: Wizard.wizardSSID}],
-                        optionalServices: [this.normalizeUuid(GATTUUID.Service), this.normalizeUuid(GATTUUID.WriteChar), this.normalizeUuid(GATTUUID.NotifyChar), this.normalizeUuid(GATTUUID.SecondaryNotify), this.normalizeUuid(GATTUUID.Service2)],
+                        acceptAllDevices: true,
+                        optionalServices: [this.normalizeUuid(GATTUUID.WriteChar), this.normalizeUuid(GATTUUID.NotifyChar), this.normalizeUuid(GATTUUID.SecondaryNotify), this.normalizeUuid(GATTUUID.Service2)],
                     }).then(device => {
                         console.log(device);
 
@@ -138,7 +139,9 @@ class Wizard {
 
         // Register Shutdown Button. Click Listener.
         Wizard.poweroffButton.on("click", () => {
-            Wizard.sendCommandNoResponse("shutdown");
+            Confirm.show(i18next.t("common:shutdown-title"), i18next.t("common:shutdown-message"), i18next.t("common:yes"), i18next.t("common:no"), () => {
+                Wizard.sendCommandNoResponse("shutdown");
+            });
         });
     }
 
@@ -200,6 +203,8 @@ class Wizard {
      * @return {Promise<void>} A promise that resolves once the device is connected and notifications are prepared.
      */
     private static async setConnectedDevice(device: BluetoothDevice) {
+        if(!device.gatt) return;
+
         // Try to connect to a device.
         const server = await device.gatt?.connect();
 
