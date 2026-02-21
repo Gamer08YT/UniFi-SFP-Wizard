@@ -1,0 +1,7 @@
+body {
+    background-color: rgb(19, 20, 22);
+}
+
+.card-body p {
+    line-height: 0.5rem;
+}
