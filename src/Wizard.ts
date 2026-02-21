@@ -15,6 +15,7 @@ class Wizard {
     // Store DOM Element Intances.
     private static connectButton: JQuery<HTMLElement>;
     private static poweroffButton: JQuery<HTMLElement>;
+    private static rebootButton: JQuery<HTMLElement>;
     private static chargeControlButton: JQuery<HTMLElement>;
 
     // Store GATT Characteristic Instances.
@@ -70,6 +71,15 @@ class Wizard {
      * Initiates a system power-off sequence by sending a shutdown command*/
     public static async poweroff(): Promise<void> {
         return await Wizard.sendCommandNoResponse("powerOff");
+    }
+
+    /**
+     * Sends an API request to reboot the device associated with the provided MAC address.
+     *
+     * @return {Promise<Object>} A promise that resolves with the response of the reboot request.
+     */
+    public static async reboot() {
+        return await Wizard.sendApiRequest("POST", `/api/1.0/${this.handleMAC(Secret.Mac)}/reboot`);
     }
 
     /**
@@ -188,7 +198,13 @@ class Wizard {
                     console.debug(response);
                 });
             });
+        });
 
+        // Register Reboot Control Button.
+        Wizard.rebootButton.on("click", () => {
+            Confirm.show(i18next.t("common:reboot-title"), i18next.t("common:reboot-message"), i18next.t("common:yes"), i18next.t("common:no"), () => {
+                Wizard.reboot().then(r => console.debug(r));
+            });
         });
     }
 
@@ -242,6 +258,7 @@ class Wizard {
         Wizard.connectButton = $("#connect-wizard");
         Wizard.poweroffButton = $("#poweroff-wizard");
         Wizard.chargeControlButton = $("#charge-wizard");
+        Wizard.rebootButton = $("#reboot-wizard");
     }
 
     /**
@@ -276,6 +293,9 @@ class Wizard {
 
         //const mac = Wizard.device.id.replace(/:/g, "").toUpperCase();
         await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}`);
+        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/settings`);
+        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/bt`);
+        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/fw`);
 
         // Set Device Instance.
         Wizard.device = device;

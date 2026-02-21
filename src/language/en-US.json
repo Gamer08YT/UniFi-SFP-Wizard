@@ -12,5 +12,7 @@
   "charge-title": "Charge Control",
   "charge-message": "Are you sure you want to stop charging the device?",
   "command-success": "Command successful",
-  "command-failed": "Command failed"
+  "command-failed": "Command failed",
+  "reboot-title": "Reboot",
+  "reboot-message": "Are you sure you want to reboot the device?"
 }
