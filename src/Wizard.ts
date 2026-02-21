@@ -442,6 +442,8 @@ class Wizard {
      * @return {void} Nothing is returned from this method.
      */
     private static addInfoCharListener(): void {
+        console.log("Adding InfoChar Listener");
+
         Wizard.infoChar.addEventListener("characteristicvaluechanged", (event) => {
             const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
 
@@ -462,6 +464,8 @@ class Wizard {
      * @return {void} This method does not return any value.
      */
     private static addNotifyCharListener(): void {
+        console.log("Adding NotifyChar Listener");
+
         Wizard.notifyChar.addEventListener("characteristicvaluechanged", (event) => {
             const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
 
@@ -475,7 +479,9 @@ class Wizard {
      *
      * @return {void} This method does not return a value.
      */
-    private static addWriteCharListener() {
+    private static addWriteCharListener(): void {
+        console.log("Adding WriteChar Listener");
+
         Wizard.writeChar.addEventListener("characteristicvaluechanged", (event) => {
             const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
 
