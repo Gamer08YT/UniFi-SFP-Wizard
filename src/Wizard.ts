@@ -203,7 +203,7 @@ class Wizard {
      * @return {Promise<void>} A promise that resolves once the device is connected and notifications are prepared.
      */
     private static async setConnectedDevice(device: BluetoothDevice) {
-        if(!device.gatt) return;
+        if (!device.gatt) return;
 
         // Try to connect to a device.
         const server = await device.gatt?.connect();
@@ -306,20 +306,30 @@ class Wizard {
      *                               Rejects with an error if a timeout occurs or if no response is received.
      */
     public static async sendCommand(command: string, timeout: number = 3000): Promise<Uint8Array> {
-        if (!Wizard.infoChar) throw new Error("Not connected");
+        // Check if InfoChar is set.
+        if (!Wizard.infoChar) throw new Error("InfoChar not set / not connected");
 
-        console.log(`Sending Command: ${command}`);
+        // Print Debug Message.
+        console.log(`Sending GATT command (response expected): ${command}`);
 
         // Prepare Encoder.
         const encoder = new TextEncoder();
 
+        // Prepare Data.
+        const data = encoder.encode(command);
+
         // Prepare Pending Resolver.
         Wizard.pendingResolver = null;
+
+        // Print Debug Message.
+        console.log(`Wrote ${data.length} bytes to InfoChar`);
 
         // Send Command.
         return new Promise<Uint8Array>((resolve, reject) => {
             Wizard.pendingResolver = resolve;
-            Wizard.infoChar!.writeValueWithoutResponse(encoder.encode(command));
+
+            // Write command to the Info characteristic.
+            Wizard.infoChar!.writeValueWithoutResponse(data);
 
             // Timeout Resolver.
             setTimeout(() => {
@@ -339,8 +349,10 @@ class Wizard {
      * @throws {Error} If the InfoChar property is not set or the device is not connected.
      */
     public static async sendCommandNoResponse(command: string): Promise<void> {
+        // Check if InfoChar is set.
         if (!Wizard.infoChar) throw new Error("InfoChar not set / not connected");
 
+        // Print Debug Message.
         console.log(`Sending GATT command (no response expected): ${command}`);
 
         const encoder = new TextEncoder();
@@ -349,6 +361,7 @@ class Wizard {
         // Write command to the Info characteristic
         await Wizard.infoChar.writeValueWithoutResponse(data);
 
+        // Print Debug Message.
         console.log(`Wrote ${data.length} bytes to InfoChar`);
 
         // Optional delay to give the device time to process
