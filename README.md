@@ -8,6 +8,20 @@ Feel free to contribute to this project.
 
 ![Dashboard](/assets/img/dashboard.png)
 
+## Features
+
+- Device Functions
+  - Reboot
+  - Shutdown
+  - Rename
+  - Battery Control
+- SFP Functions
+  - Read EEPROM
+  - Write EEPROM [X]
+    - Via File Upload
+    - Via Repo
+  - Save EEPROM
+
 ## Contributing
 
 Feel free to contribute, every help is appreciated!
