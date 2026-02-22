@@ -819,7 +819,7 @@ class Wizard {
         // Deflate JSON Data from Header.
         const compressedHeader = deflate(jsonData);
 
-        // Build Header section (9 + compressedHeader.length) ---
+        // Build Header section (9 + compressedHeader.length)
         const headerSection = new Uint8Array(9 + compressedHeader.length);
         headerSection[0] = ProtocolType.TypeHeader; // 0x03
         headerSection[1] = FormatType.json;       // 0x01
@@ -832,7 +832,7 @@ class Wizard {
         headerSection[8] = compressedHeader.length & 0xff; // 1‑Byte length
         headerSection.set(compressedHeader, 9);
 
-        // Build Body section (8 + bodyData.length) ---
+        // Build Body section (8 + bodyData.length)
         const bodySection = new Uint8Array(8 + bodyData.length);
         bodySection[0] = ProtocolType.TypeBody; // 0x02
         bodySection[1] = FormatType.binary;   // 0x03
@@ -865,6 +865,73 @@ class Wizard {
 
 
     /**
+     * Encodes the input JSON and body data into a binary format with a transport header,
+     * compressed content, and structured sections for header and body information.
+     *
+     * @param {Uint8Array} jsonData - The JSON data to encode, provided as a Uint8Array.
+     * @param {Uint8Array} bodyData - The body data to encode, provided as a Uint8Array.
+     * @param {number} seqNum - A sequence number to include in the transport header.
+     * @return {Uint8Array} The encoded binary data as a Uint8Array containing the transport header,
+     *                      compressed JSON header section, and compressed body section.
+     */
+    private static binmeEncodeStringBody(
+        jsonData: Uint8Array,
+        bodyData: Uint8Array,
+        seqNum: number
+    ): Uint8Array {
+
+        // Deflate JSON Data from Header.
+        const compressedHeader = deflate(jsonData);
+
+        // Deflate Body Data.
+        const compressedBody = deflate(bodyData);
+
+        // Build Header section (9 + compressedHeader.length)
+        const headerSection = new Uint8Array(9 + compressedHeader.length);
+
+        headerSection[0] = ProtocolType.TypeHeader; // 0x03
+        headerSection[1] = FormatType.json;       // 0x01
+        headerSection[2] = 0x01;             // compressed = true
+        headerSection[3] = 0x01;             // flags
+        headerSection[4] = 0x00;             // reserved
+        headerSection[5] = 0x00;
+        headerSection[6] = 0x00;
+        headerSection[7] = 0x00;
+        headerSection[8] = compressedHeader.length & 0xff; // 1‑Byte length
+        headerSection.set(compressedHeader, 9);
+
+        // Build Body section (8 + bodyData.length)
+        const bodySection = new Uint8Array(8 + compressedBody.length);
+        bodySection[0] = ProtocolType.TypeBody; // 0x02
+        bodySection[1] = FormatType.text;   // 0x02
+        bodySection[2] = 0x01;           // compressed = true
+        bodySection[3] = 0x00;           // reserved
+
+        const dv = new DataView(bodySection.buffer);
+        dv.setUint32(4, compressedBody.length, false); // BigEndian
+
+        bodySection.set(compressedBody, 8);
+
+        // Calculate total length
+        const totalLen = headerSection.length + bodySection.length;
+
+        // Define Transport Header
+        const transportHeader = new Uint8Array(4);
+        const dv2 = new DataView(transportHeader.buffer);
+        dv2.setUint16(0, totalLen + 4, false); // BigEndian
+        dv2.setUint16(2, seqNum, false);
+
+        // Combine header, body, and transport header into one Uint8Array
+        const out = new Uint8Array(transportHeader.length + totalLen);
+        out.set(transportHeader, 0);
+        out.set(headerSection, 4);
+        out.set(bodySection, 4 + headerSection.length);
+
+        return out;
+    }
+
+
+    /**
      * Decodes a binary-encoded data structure with a specific format containing headers and body sections.
      *
      * The method extracts and decodes both the header and body sections, supporting optional compression on both.
@@ -874,7 +941,9 @@ class Wizard {
      * @return {{header: object, body: object}} An object containing the decoded header and body as parsed JSON objects.
      * @throws {Error} If the header or body type is invalid.
      */
-    private static binmeDecode(data: Uint8Array): { header: object; body: object; } {
+    private static
+
+    binmeDecode(data: Uint8Array): { header: object; body: object; } {
         let pos = 4; // skip transport header
 
         // HEADER
@@ -941,7 +1010,16 @@ class Wizard {
      * @param {"GET" | "POST"} method - The HTTP method to use for the request.
      * @param bodyObj
      * @param {string} path*/
-    private static async sendApiRequest(method: "GET" | "POST", path: string, bodyObj: any = {}) {
+    private static async
+
+    sendApiRequest(method
+                   :
+                       "GET" | "POST", path
+                   :
+                   string, bodyObj
+                   :
+                   any = {}
+    ) {
         console.log(`Sending API Request: ${method} ${path}`);
 
         const [id, seq] = Wizard.nextRequestId();
@@ -983,7 +1061,13 @@ class Wizard {
      * @param {string} mac - The MAC address to be processed, typically in the format with colons (e.g., "00:1A:2B:3C:4D:5E").
      * @return {string} The processed MAC address as a string without colons, converted to lowercase.
      */
-    private static handleMAC(mac: string): string {
+    private static
+
+    handleMAC(mac
+              :
+              string
+    ):
+        string {
         return mac.replace(/:/g, "").toLowerCase();
     }
 
@@ -994,8 +1078,17 @@ class Wizard {
      * @param {string} value - The value to be set for the input field.
      * @return {void} This method does not return a value.
      */
-    private static setValue(name: string, value: string): void {
-        $("#device-" + name).val(value);
+    private static
+
+    setValue(name
+             :
+             string, value
+             :
+             string
+    ):
+        void {
+        $("#device-" + name
+        ).val(value);
     }
 
     /**
@@ -1005,7 +1098,14 @@ class Wizard {
      * @param {string} value - The text content to be set for the identified HTML element.
      * @return {void} This method does not return a value.
      */
-    private static setText(name: string, value: string) {
+    private static
+
+    setText(name
+            :
+            string, value
+            :
+            string
+    ) {
         $("#device-" + name).text(value);
     }
 
@@ -1017,7 +1117,11 @@ class Wizard {
      *
      * @return {Promise<void>} A promise that resolves when the firmware information has been retrieved and processed.
      */
-    private static async queryFirmwareInfo(): Promise<void> {
+    private static async
+
+    queryFirmwareInfo()
+        :
+        Promise<void> {
         await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Wizard.deviceId)}/fw`).then(r => {
             const data = (r as any).body;
 
@@ -1031,7 +1135,13 @@ class Wizard {
      * @param {boolean} b - A boolean value where `true` activates the loader and `false` deactivates it.
      * @return {void} This method does not return a value.
      */
-    private static setLoader(b: boolean): void {
+    private static
+
+    setLoader(b
+              :
+              boolean
+    ):
+        void {
         if (b) {
             Loading.dots();
         } else {
@@ -1047,7 +1157,9 @@ class Wizard {
      *
      * @return {void} Does not return a value.
      */
-    private static clearFields() {
+    private static
+
+    clearFields() {
         // Clear Device Info Fields.
         this.setText("firmware", "-");
         this.setText("name", "-");
@@ -1069,12 +1181,30 @@ class Wizard {
      * @param {any} value - The value to set as the text content of the page element.
      * @return {void} This method does not return a value.
      */
-    private setPage(key: string, value: any): void {
-        $("#page-" + key).text(value);
+    private
+
+    setPage(key
+            :
+            string, value
+            :
+            any
+    ):
+        void {
+        $("#page-" + key
+        ).text(value);
     }
 
-    private static setModule(key: string, value: any): void {
-        $("#sfp-" + key).text(value);
+    private static
+
+    setModule(key
+              :
+              string, value
+              :
+              any
+    ):
+        void {
+        $("#sfp-" + key
+        ).text(value);
     }
 
     /**
@@ -1084,7 +1214,9 @@ class Wizard {
      *
      * @return {Promise<void>} A promise that resolves when the XSFP details are successfully retrieved and processed.
      */
-    private async readXSFP() {
+    private async
+
+    readXSFP() {
         await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/details`).then((r) => {
             const data = (r as any).body;
             const header = (r as any).header;
@@ -1125,7 +1257,9 @@ class Wizard {
      * It ensures the presence of necessary data properties before starting the data stream process.
      *
      * @return {Promise<void*/
-    private async saveXSFP() {
+    private async
+
+    saveXSFP() {
         // Start Reading of Module.
         return await this.startReadingProcess().then(async (r) => {
             const data = (r as any).body;
@@ -1156,7 +1290,9 @@ class Wizard {
      *
      * @return {Promise<Object>} A promise that resolves to the response of the API request.
      */
-    private async startReadingProcess() {
+    private async
+
+    startReadingProcess() {
         return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/start`);
     }
 
@@ -1167,7 +1303,15 @@ class Wizard {
      * @param {*} size - The size or amount of data to be retrieved.
      * @return {Promise<any>} A promise that resolves with the response from the API request.
      */
-    private async startStreamProcess(offset: number, size: any): Promise<any> {
+    private async
+
+    startStreamProcess(offset
+                       :
+                       number, size
+                       :
+                       any
+    ):
+        Promise<any> {
         return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/data`, {
             offset: offset,
             chunk: size
@@ -1181,7 +1325,11 @@ class Wizard {
      *
      * @return {void} This method does not return any value.
      */
-    private static wrongBrowserBLESupport(): void {
+    private static
+
+    wrongBrowserBLESupport()
+        :
+        void {
         Notify.failure(i18next.t("common:browser-ble-support"));
     }
 
@@ -1191,7 +1339,14 @@ class Wizard {
      * @param {string} s - The string to be logged in the log container.
      * @return {void} This method does not return a value.
      */
-    private static setLog(s: string, legacy: boolean) {
+    private static
+
+    setLog(s
+           :
+           string, legacy
+           :
+           boolean
+    ) {
         $("#log-container").append(`<div title="${legacy ? i18next.t("common:api-legacy") : i18next.t("common:api-new")}" class="log"><a>${this.formatTimeHHMMSS()} - </a><code>${s}</code></div>`);
 
         if (this.hasAutoscroll()) {
@@ -1203,7 +1358,9 @@ class Wizard {
      * Formats a given Date object into a time string in the format HH:mm:ss.
      * If no date is provided, the current date and time are used.
      */
-    private static formatTimeHHMMSS(date = new Date()) {
+    private static
+
+    formatTimeHHMMSS(date = new Date()) {
         const pad2 = (n: any) => String(n).padStart(2, "0");
         const HH = pad2(date.getHours());
         const mm = pad2(date.getMinutes());
@@ -1217,7 +1374,11 @@ class Wizard {
      *
      * @return {void} Does not return any value.
      */
-    private replaceLocale(): void {
+    private
+
+    replaceLocale()
+        :
+        void {
         console.log(`Locale set to ${i18next.language}`);
 
         // Set Page Texts.
@@ -1236,9 +1397,10 @@ class Wizard {
         Wizard.saveButton.text(i18next.t("common:save"));
         Wizard.writeButton.text(i18next.t("common:write"));
 
-        $("#autoscroll-label").text(i18next.t("common:autoscroll"));
+        $("#autoscroll-label"
+        ).text(i18next.t("common:autoscroll"));
 
-        // Clear Fields.
+// Clear Fields.
         Wizard.clearFields();
     }
 
@@ -1248,8 +1410,13 @@ class Wizard {
      *
      * @return {void} This method does not return a value.
      */
-    private static scrollLogToBottom(): void {
-        $("#log-container").scrollTop($("#log-container")[0].scrollHeight);
+    private static
+
+    scrollLogToBottom()
+        :
+        void {
+        $("#log-container"
+        ).scrollTop($("#log-container")[0].scrollHeight);
     }
 
     /**
@@ -1257,7 +1424,11 @@ class Wizard {
      *
      * @return {boolean} Returns true if the autoscroll switch is checked, otherwise false.
      */
-    private static hasAutoscroll(): boolean {
+    private static
+
+    hasAutoscroll()
+        :
+        boolean {
         return Wizard.autoscrollSwitch.is(":checked");
     }
 
@@ -1269,7 +1440,13 @@ class Wizard {
      * @param {Uint8Array} data - The byte array to analyze for text content.
      * @return {boolean} Returns true if the data is predominantly text-based; otherwise, false.
      */
-    private static isTextData(data: Uint8Array): boolean {
+    private static
+
+    isTextData(data
+               :
+               Uint8Array
+    ):
+        boolean {
         if (data.length === 0) return false;
 
         let textChars = 0;
