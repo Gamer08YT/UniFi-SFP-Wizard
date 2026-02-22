@@ -1,4 +1,4 @@
-import $ from "jquery";
+import $, {data} from "jquery";
 import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
 import * as deCommon from "./language/de-DE.json";
@@ -1457,8 +1457,11 @@ class Wizard {
         // Set the download attribute of the link from Blob.
         triggerDownload.href = tmpUrl;
 
+        // Parse Meta from Binary.
+        const meta = Wizard.fetchEEPROM(r.body)
+
         // Set the file name of the download link.
-        triggerDownload.download = "sfp_data.uieeprom";
+        triggerDownload.download = meta.vendor + "-" + meta.part + ".uieeprom";
 
         // Append to Body.
         document.body.appendChild(triggerDownload);
@@ -1495,7 +1498,7 @@ class Wizard {
         const pn = new TextDecoder().decode(data.slice(40, 56)).trim();
         const sn = new TextDecoder().decode(data.slice(68, 84)).trim();
 
-        return {vendor: vendor, sn: pn, part: sn};
+        return {vendor: vendor, sn: sn, part: pn};
     }
 
 }
