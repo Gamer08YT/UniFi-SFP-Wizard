@@ -31,7 +31,7 @@ export class Repository {
             // @ts-ignore
             data.forEach(element => {
                 if (element.name.endsWith(".uieeprom")) {
-                    $("#sfp-repo").append(`<option value="${element.name}">${element.name}</option>`)
+                    $("#sfp-repo").append(`<option value="${element.name}">${element.name.replace(".uieeprom", "")}</option>`)
                 }
             })
 
