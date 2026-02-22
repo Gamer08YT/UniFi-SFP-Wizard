@@ -25,19 +25,19 @@ class Wizard {
     private static chargeControlButton: JQuery<HTMLElement>;
     private static eepromUpload: JQuery<HTMLElement>;
     private static autoscrollSwitch: JQuery<HTMLElement>;
+    private static nameButton: JQuery<HTMLElement>;
     private static repoSelect: JQuery<HTMLElement>;
 
     // Store GATT Characteristic Instances.
     private static infoChar: BluetoothRemoteGATTCharacteristic;
-
     private static apiNotifyChar: BluetoothRemoteGATTCharacteristic;
     private static writeChar: BluetoothRemoteGATTCharacteristic;
     private static notifyChar: BluetoothRemoteGATTCharacteristic;
     // Store BLE Device Instance.
+
     private static device: BluetoothDevice;
 
     private static pendingResolver: ((data: Uint8Array) => void) | null = null;
-
     private static apiResolvers: Map<string, (data: any) => void> = new Map();
     private static service: BluetoothRemoteGATTService;
     private static requestCounter = 0;
@@ -273,6 +273,30 @@ class Wizard {
         Wizard.saveButton.on("click", () => {
             this.saveXSFP();
         });
+
+        // Register Name Control Button.
+        Wizard.nameButton.on("click", () => {
+            Confirm.prompt(i18next.t("common:name-title"), i18next.t("common:name-message"), i18next.t("common:default-name"), i18next.t("common:yes"), i18next.t("common:no"), (data: string) => {
+                if (data.length > 28) {
+                    Notify.failure(i18next.t("common:name-too-long"));
+
+                    return;
+                }
+
+                // Change Name.
+                this.changeName(data).then(r => {
+                    const data = (r as any).header;
+
+                    if (data.statusCode == 200) {
+                        Notify.success(i18next.t("common:name-success"));
+                    } else if (data.statusCode == 304) {
+                        Notify.warning(i18next.t("common:name-unchanged"));
+                    } else {
+                        Notify.failure(i18next.t("common:name-failed"));
+                    }
+                });
+            });
+        });
     }
 
     /**
@@ -336,6 +360,7 @@ class Wizard {
         Wizard.autoscrollSwitch = $("#autoscroll");
         Wizard.eepromUpload = $("#sfp-file");
         Wizard.repoSelect = $("#sfp-repo");
+        Wizard.nameButton = $("#name-wizard");
     }
 
     /**
@@ -1501,6 +1526,16 @@ class Wizard {
         return {vendor: vendor, sn: sn, part: pn};
     }
 
+    /**
+     * Asynchronously changes the name for the device associated with the current instance.
+     * Sends a POST request to the corresponding API endpoint with the new name.
+     *
+     * @param {string} data - The new name to be set for the device.
+     * @return {Promise<any>} A promise resolving with the response of the API request.
+     */
+    private async changeName(data: string): Promise<any> {
+        return await Wizard.sendApiRequest("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/name`, {name: data});
+    }
 }
 
 new Wizard();

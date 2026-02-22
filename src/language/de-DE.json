@@ -35,5 +35,12 @@
   "api-legacy": "Alte API",
   "autoscroll": "Automatisch mit dem Log scrollen",
   "reboot-success": "Gerät wird in wenigen Sekunden neugestartet...",
-  "reboot-failed": "Gerät konnte nicht neugestartet werden."
+  "reboot-failed": "Gerät konnte nicht neugestartet werden.",
+  "name-title": "Name ändern",
+  "name-message": "Gib einen neuen Namen für das Gerät ein.",
+  "name-success": "Der Gerätename wurde erfolgreich geändert.",
+  "name-too-long": "Der Name ist zu lang. Bitte gib einen kürzeren Namen mit maximal 28 Zeichen ein.",
+  "name-unchanged": "Der Gerätename wurde nicht geändert, da er mit dem aktuellen Namen identisch ist.",
+  "name-failed": "Ändern des Gerätenamens fehlgeschlagen.",
+  "default-name": "SFP Wizard"
 }

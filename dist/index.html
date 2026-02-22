@@ -62,8 +62,6 @@ The tool connects to your SFP Wizard using the Web Bluetooth API. ">
                             <button type="button" id="connect-wizard" class="btn btn-primary">Connect</button>
                             <button type="button" id="poweroff-wizard" disabled class="btn btn-danger">Shutdown</button>
                             <button type="button" id="reboot-wizard" disabled class="btn btn-danger">Reboot</button>
-                            <button type="button" id="charge-wizard" disabled class="btn btn-warning">Charge Control
-                            </button>
                         </div>
                         <!-- End: Device Connect -->
                     </div>
@@ -108,8 +106,10 @@ The tool connects to your SFP Wizard using the Web Bluetooth API. ">
                                 <!-- End: SFP Flash -->
 
                                 <div class="btn-group needConnected" role="group">
-                                    <button type="button" id="write-sfp" disabled class="btn btn-primary">Write SFP</button>
-                                    <button type="button" id="save-sfp" disabled class="btn btn-primary">Save SFP</button>
+                                    <button type="button" id="write-sfp" disabled class="btn btn-primary">Write SFP
+                                    </button>
+                                    <button type="button" id="save-sfp" disabled class="btn btn-primary">Save SFP
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -156,6 +156,25 @@ The tool connects to your SFP Wizard using the Web Bluetooth API. ">
                                     </div>
                                 </div>
                                 <!-- End: Wizard Log -->
+                            </div>
+                        </div>
+                        <br>
+                        <div class="card">
+                            <div class="card-body">
+                                <!-- Start: Wizard More -->
+                                <div id="wizard-more">
+                                    <h5 class="card-title">More</h5>
+
+                                    <div class="btn-group needConnected">
+                                        <button type="button" id="charge-wizard" disabled class="btn btn-warning">Charge
+                                            Control
+                                        </button>
+                                        <button type="button" id="name-wizard" disabled class="btn btn-warning">Change
+                                            Name
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- End: Wizard More -->
                             </div>
                         </div>
                     </div>

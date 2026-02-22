@@ -35,5 +35,12 @@
   "api-legacy": "Legacy API",
   "autoscroll": "Autoscroll the Log",
   "reboot-success": "Device will be rebooted in a few seconds...",
-  "reboot-failed": "Device reboot failed."
+  "reboot-failed": "Device reboot failed.",
+  "name-title": "Change Name",
+  "name-message": "Enter a new name for the device.",
+  "name-success": "Device name changed successfully.",
+  "name-too-long": "Your name is too long. Please enter a shorter name up to 28 characters.",
+  "name-unchanged": "Device name unchanged because it is identical to the current name.",
+  "name-failed": "Device name change failed.",
+  "default-name": "SFP Wizard"
 }
