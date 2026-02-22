@@ -1,5 +1,57 @@
+:root {
+    --primary-text: #c0ecfa;
+    --secondary-text: #c7c9cc;
+    --disabled-text: #72767d;
+    --link-text: #2777d5;
+    --primary-color: #131416;
+    --secondary-color: #232426;
+}
+
 body {
-    background-color: rgb(19, 20, 22);
+    color: var(--primary-text) !important;
+    background-color: var(--primary-color) !important;
+    font-family: UI Sans, Lato, Arial, sans-serif;
+}
+
+footer {
+    color: var(--secondary-text) !important;
+    background-color: var(--secondary-color) !important;
+}
+
+footer > p {
+    color: var(--primary-text) !important;
+}
+
+span, p {
+    color: var(--secondary-text);
+}
+
+select {
+    color: var(--primary-text) !important;
+}
+
+select, input {
+    color: var(--secondary-text) !important;
+    background-color: var(--primary-color) !important;
+    border-color: var(--secondary-color) !important;
+}
+
+input[disabled], select[disabled] {
+    background-color: var(--secondary-color) !important;
+    color: var(--disabled-text) !important;
+}
+
+.template-elements {
+    display: none;
+}
+
+.collapse > .card, .collapsing > .card {
+    background-color: var(--secondary-color) !important;
+    color: var(--primary-text) !important;
+}
+
+.collapse.show {
+    padding-bottom: 1rem;
 }
 
 .card-body p {

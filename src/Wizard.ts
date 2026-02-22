@@ -23,19 +23,20 @@ class Wizard {
     private static chargeControlButton: JQuery<HTMLElement>;
     private static eepromUpload: JQuery<HTMLElement>;
     private static autoscrollSwitch: JQuery<HTMLElement>;
+    private static repoSelect: JQuery<HTMLElement>;
 
     // Store GATT Characteristic Instances.
     private static infoChar: BluetoothRemoteGATTCharacteristic;
-    private static apiNotifyChar: BluetoothRemoteGATTCharacteristic;
 
+    private static apiNotifyChar: BluetoothRemoteGATTCharacteristic;
     private static writeChar: BluetoothRemoteGATTCharacteristic;
     private static notifyChar: BluetoothRemoteGATTCharacteristic;
     // Store BLE Device Instance.
     private static device: BluetoothDevice;
+
     private static pendingResolver: ((data: Uint8Array) => void) | null = null;
 
     private static apiResolvers: Map<string, (data: any) => void> = new Map();
-
     private static service: BluetoothRemoteGATTService;
     private static requestCounter = 0;
     // Store Wizard Mac to Query via Service V2 (Hybrid HTTP API).
@@ -135,9 +136,11 @@ class Wizard {
         if (state) {
             // Toggle Eeprom Upload State.
             Wizard.eepromUpload.removeAttr("disabled");
+            Wizard.repoSelect.removeAttr("disabled");
         } else {
             // Toggle Eeprom Upload State.
             Wizard.eepromUpload.attr("disabled", "disabled");
+            Wizard.repoSelect.attr("disabled", "disabled");
         }
     }
 
@@ -330,6 +333,7 @@ class Wizard {
         Wizard.saveButton = $("#save-sfp");
         Wizard.autoscrollSwitch = $("#autoscroll");
         Wizard.eepromUpload = $("#sfp-file");
+        Wizard.repoSelect = $("#sfp-repo");
     }
 
     /**
