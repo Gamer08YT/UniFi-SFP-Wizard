@@ -52,3 +52,5 @@ This project is oriented at the https://github.com/vitaminmoo/sfpw-tool Reposito
 #### Participation is at your own risk!
 
 ### As with all of my repositories, I would like to point out that I am in no way affiliated with Ubiquiti or UniFi.
+
+### The EEPROM dumps published here are for testing purposes only. If a legal claim arises, please contact me and I will gladly take it offline.
