@@ -164,10 +164,16 @@ class Wizard {
                     });
                 } else {
                     console.error("Bluetooth is not available on this device.");
+
+                    // Notify for wrong Browser.
+                    this.wrongBrowserBLESupport();
                 }
             });
         } else {
             console.error("Bluetooth is not supported on this device.");
+
+            // Notify for wrong Browser.
+            this.wrongBrowserBLESupport();
         }
     }
 
@@ -845,7 +851,7 @@ class Wizard {
         const bodyJson = new TextEncoder().encode(JSON.stringify(bodyObj));
 
         // Debug Body Field.
-        if (bodyObj != undefined) {
+        if (bodyObj !== undefined) {
             console.log("Body:", bodyObj);
         }
 
@@ -934,9 +940,18 @@ class Wizard {
      * @return {void} Does not return a value.
      */
     private static clearFields() {
+        // Clear Device Info Fields.
         this.setText("firmware", "-");
         this.setText("name", "-");
         this.setText("serial", "-");
+
+        // Clear Module Info.
+        Wizard.setModule("part", "-");
+        Wizard.setModule("rev", "-");
+        Wizard.setModule("vendor", "-");
+        Wizard.setModule("sn", "-");
+        Wizard.setModule("type", "-");
+        Wizard.setModule("compliance", "-");
     }
 
     /**
@@ -950,7 +965,7 @@ class Wizard {
         $("#page-" + key).text(value);
     }
 
-    private setModule(key: string, value: any): void {
+    private static setModule(key: string, value: any): void {
         $("#sfp-" + key).text(value);
     }
 
@@ -972,12 +987,12 @@ class Wizard {
              * }
              */
 
-            this.setModule("part", data.partNumber);
-            this.setModule("rev", data.rev);
-            this.setModule("vendor", data.vendor);
-            this.setModule("sn", data.sn);
-            this.setModule("type", data.type);
-            this.setModule("compliance", data.compliance);
+            Wizard.setModule("part", data.partNumber);
+            Wizard.setModule("rev", data.rev);
+            Wizard.setModule("vendor", data.vendor);
+            Wizard.setModule("sn", data.sn);
+            Wizard.setModule("type", data.type);
+            Wizard.setModule("compliance", data.compliance);
 
             // Print Success Toast.
             Notify.success(i18next.t("common:module-message"));
@@ -1003,8 +1018,11 @@ class Wizard {
                 throw new Error("size or chunk required");
             }
 
+            // Print Debug Message.
+            console.log(`Received size: ${data.size} and chunk: ${data.chunk}.`);
+
             // Get Data from Device.
-            await this.startStreamProcess(0, data.size).then((r) => {
+            await this.startStreamProcess(0, (data.size = 0 ? 512 : data.size)).then((r) => {
                 // Show Saved Notification.
                 Notify.success(i18next.t("common:module-saved"));
             });
@@ -1028,14 +1046,23 @@ class Wizard {
      * @param {*} size - The size or amount of data to be retrieved.
      * @return {Promise<any>} A promise that resolves with the response from the API request.
      */
-    private async startStreamProcess(offset: number, size: any) {
+    private async startStreamProcess(offset: number, size: any): Promise<any> {
         return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Secret.Mac)}/xsfp/module/data`, {
             offset: offset,
-            size: size
+            chunk: size
         });
+    }
+
+    /**
+     * Displays a notification indicating that the browser does not support BLE (Bluetooth Low Energy).
+     *
+     * Uses the Notify.failure method to show a failure message with a localized string from i18next.
+     *
+     * @return {void} This method does not return any value.
+     */
+    private static wrongBrowserBLESupport(): void {
+        Notify.failure(i18next.t("common:browser-ble-support"));
     }
 }
 
-new
-
-Wizard();
+new Wizard();

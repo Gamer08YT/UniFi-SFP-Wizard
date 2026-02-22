@@ -6,6 +6,8 @@ You can read, save or write the configuration of an SFP EEPROM.
 
 Feel free to contribute to this project.
 
+![Dashboard](/assets/img/dashboard.png)
+
 ## Contributing
 
 Feel free to contribute, every help is appreciated!

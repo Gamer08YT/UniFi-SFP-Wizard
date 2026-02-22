@@ -1,5 +1,6 @@
 {
   "enable-flag": "Open about://flags and enable #experimental-web-platform-features to use Web Bluetooth.",
+  "browser-ble-support": "Your browser does not support Web Bluetooth API. Please use a browser that supports it.",
   "connect": "Connect",
   "connected": "Successfully connected to device...",
   "disconnected": "Disconnected from device.",
