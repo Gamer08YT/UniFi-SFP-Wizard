@@ -20,5 +20,5 @@ body {
 }
 
 .btn-group {
-    display: contents;
+    display: inline;
 }
