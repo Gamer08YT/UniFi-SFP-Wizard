@@ -399,6 +399,9 @@ class Wizard {
             // Check if API Response contains Mac ID.
             if (data.id != undefined) {
                 Wizard.deviceId = data.id;
+
+                // Set Battery Level.
+                this.setText("battery", data.level + "%");
             } else {
                 Notify.failure(i18next.t("common:mac-failed"));
             }
@@ -1158,7 +1161,7 @@ class Wizard {
      * @param {string} value - The text content to be set for the identified HTML element.
      * @return {void} This method does not return a value.
      */
-    private static setText(name: string, value: string) {
+    private static setText(name: string, value: string): void {
         $("#device-" + name).text(value);
     }
 
@@ -1205,6 +1208,7 @@ class Wizard {
         this.setText("firmware", "-");
         this.setText("name", "-");
         this.setText("serial", "-");
+        this.setText("battery", "-");
 
         // Clear Module Info.
         Wizard.setModule("part", "-");
@@ -1392,6 +1396,7 @@ class Wizard {
         this.setPage("firmware", i18next.t("common:firmware"));
         this.setPage("name", i18next.t("common:name"));
         this.setPage("serial", i18next.t("common:serial"));
+        this.setPage("battery", i18next.t("common:battery"));
 
         // Replace the default button text with localized versions.
         Wizard.connectButton.text(i18next.t("common:connect"));

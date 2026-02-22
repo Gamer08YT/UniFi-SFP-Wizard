@@ -42,5 +42,6 @@
   "name-too-long": "Der Name ist zu lang. Bitte gib einen kürzeren Namen mit maximal 28 Zeichen ein.",
   "name-unchanged": "Der Gerätename wurde nicht geändert, da er mit dem aktuellen Namen identisch ist.",
   "name-failed": "Ändern des Gerätenamens fehlgeschlagen.",
-  "default-name": "SFP Wizard"
+  "default-name": "SFP Wizard",
+  "battery": "Batterie"
 }
