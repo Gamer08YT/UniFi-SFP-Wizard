@@ -4,7 +4,7 @@
   "description": "",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "webpack --mode production",
     "serve": "webpack serve"
   },
   "dependencies": {
