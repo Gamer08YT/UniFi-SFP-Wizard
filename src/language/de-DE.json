@@ -46,6 +46,7 @@
   "battery": "Batterie",
   "no-eeprom-selected": "Es wurde kein EEPROM Dump zum flashen ausgewählt.",
   "eeprom-dump-send": "EEPROM Dump wurde erfolgreich auf das Gerät übertragen, bitte auf \"Write\" drücken um das Modul zu flashen.",
-  "eeprom-sync-error": "Beim Synchronisieren des EEPROM Dumps ist ein Fehler aufgetreten."
+  "eeprom-sync-error": "Beim Synchronisieren des EEPROM Dumps ist ein Fehler aufgetreten.",
+  "eeprom-file-error": "Falsches EEPROM Dump File, die Datei muss 512 (SFP) oder 640 (QSFP) Bytes lang sein."
 
 }

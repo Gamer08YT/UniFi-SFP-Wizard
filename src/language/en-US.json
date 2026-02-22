@@ -46,5 +46,6 @@
   "battery": "Battery",
   "no-eeprom-selected": "No EEPROM Dump to flash was selected.",
   "eeprom-dump-send": "EEPROM Dump was successfully sent to device, please click on \"Write\" to flash it.",
-  "eeprom-sync-error": "While synchronizing the EEPROM Dump an error has occurred."
+  "eeprom-sync-error": "While synchronizing the EEPROM Dump an error has occurred.",
+  "eeprom-file-error": "Incorrect EEPROM Dump file format, File should be 512 (SFP) or 640 (QSFP) Bytes long. "
 }

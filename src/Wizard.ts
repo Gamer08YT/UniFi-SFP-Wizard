@@ -286,9 +286,9 @@ class Wizard {
                 this.writeXSFP().then(r => {
                     const header = (r as any).header;
 
-                    if(header.statusCode == 200){
+                    if (header.statusCode == 200) {
                         Notify.success(i18next.t("common:eeprom-dump-send"));
-                    }else{
+                    } else {
                         Notify.failure(i18next.t("eeprom-sync-error"));
                     }
 
@@ -1316,20 +1316,28 @@ class Wizard {
      */
     private async writeXSFP() {
         return await this.cancelSync().then(async (r) => {
-            const size = 512;
-            const eeprom = new Uint8Array(size);
+            return await this.readFile().then(async (eeprom) => {
+                // Check for the correct File Type.
+                if (eeprom != null && (eeprom.length == 512 || eeprom?.length == 640)) {
+                    // Request new Snapshot Transmission.
+                    return await Wizard.sendApiRequest("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/start`, {size: size}).then(async (r) => {
+                        const data = (r as any).header;
 
-            // Request new Snapshot Transmission.
-            return await Wizard.sendApiRequest("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/start`, {size: size}).then(async (r) => {
-                const data = (r as any).header;
-
-                // Check if Snapshot is Ready to be sent.
-                if (data.statusCode == 200) {
-                    // Send Snapshot.
-                    return await Wizard.sendApiRequestRaw("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/data`, eeprom);
+                        // Check if Snapshot is Ready to be sent.
+                        if (data.statusCode == 200) {
+                            // Send Snapshot.
+                            return await Wizard.sendApiRequestRaw("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/data`, eeprom);
+                        } else {
+                            // Notify Error.
+                            Notify.failure(i18next.t("common:eeprom-sync-error"));
+                        }
+                    });
                 } else {
                     // Notify Error.
-                    Notify.failure(i18next.t("common:eeprom-sync-error"));
+                    Notify.failure(i18next.t("common:eeprom-file-error"));
+
+                    // Throw Error.
+                    throw new Error("Invalid File Type");
                 }
             });
         });
@@ -1632,7 +1640,7 @@ class Wizard {
         method: "GET" | "POST",
         path: string,
         rawBody: Uint8Array,
-        timeoutMs: number = 60
+        timeoutMs: number = 6000
     ): Promise<any> {
         // Print Debug Message.
         console.log(`Sending RAW API Request: ${method} ${path}`);
@@ -1720,6 +1728,19 @@ class Wizard {
     }
 
 
+    /**
+     * Reads and processes a file selected through an input element with the ID "sfp-file".
+     *
+     * @return {Promise<Uint8Array | null>} A promise that resolves to a Uint8Array containing the file's data,
+     * or null if no file is selected or the input element is not found.
+     */
+    private async readFile() {
+        const input = document.getElementById("sfp-file") as HTMLInputElement | null;
+        const file = input?.files?.[0];
+        if (!file) return null;
+
+        return new Uint8Array(await file.arrayBuffer());
+    }
 }
 
 new Wizard();
