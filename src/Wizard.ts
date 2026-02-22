@@ -588,7 +588,7 @@ class Wizard {
 
             try {
                 // Set Log Message.
-                this.setLog(this.decodeJSON(buf));
+                this.setLog(this.decodeJSON(buf), true);
             } catch (e) {
                 // Do nothing.
             }
@@ -631,7 +631,7 @@ class Wizard {
 
                 try {
                     // Set Log Message.
-                    this.setLog(JSON.stringify(decoded));
+                    this.setLog(JSON.stringify(decoded), false);
                 } catch (e) {
                     // Do nothing.
                 }
@@ -1106,8 +1106,8 @@ class Wizard {
      * @param {string} s - The string to be logged in the log container.
      * @return {void} This method does not return a value.
      */
-    private static setLog(s: string) {
-        $("#log-container").append(`<div class="log"><a>${this.formatTimeHHMMSS()} - </a><code>${s}</code></div>`);
+    private static setLog(s: string, legacy: boolean) {
+        $("#log-container").append(`<div title="${legacy ? i18next.t("common:api-legacy") : i18next.t("common:api-new")}" class="log"><a>${this.formatTimeHHMMSS()} - </a><code>${s}</code></div>`);
     }
 
     /**
