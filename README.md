@@ -26,6 +26,10 @@ I use a dirty workaround to get the MAC, because in the API V1 the MAC is availa
 
 So I use the <code>chargeCtl</code> Command to get the MAC after a successful connection.
 
+## Credits
+
+This project is oriented at the https://github.com/vitaminmoo/sfpw-tool Repository, thank you for your work.
+
 ## Disclaimer
 
 #### I accept no liability for damage, data loss or other problems.
