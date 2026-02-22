@@ -1,4 +1,4 @@
-import $, {error} from "jquery";
+import $ from "jquery";
 import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
 import * as deCommon from "./language/de-DE.json";
@@ -6,7 +6,7 @@ import {GATTUUID} from "./GATTUUID";
 import {APIRequest} from "./APIRequest";
 import {Confirm, Loading, Notify} from "notiflix";
 import {deflate, inflate} from "pako";
-import {Frame} from "./Frame";
+import {Type} from "./Type";
 
 class Wizard {
     // Normaly it's UACC-SFP-Wizard don't know why Edge display it as Sfp Wizard.
@@ -800,19 +800,6 @@ class Wizard {
         return out;
     }
 
-    /**
-     * Extracts the prefix of the provided Uint8Array data that forms a valid JSON object.
-     *
-     * @param {Uint8Array} data - The input data to search for*/
-    private static extractJsonPrefix(data: Uint8Array): Uint8Array {
-        const text = new TextDecoder().decode(data);
-
-        const end = text.lastIndexOf("}");
-        if (end === -1) throw new Error("No JSON object found");
-
-        return data.slice(0, end + 1);
-    }
-
 
     /**
      * Decodes a binary-encoded data structure with a specific format containing headers and body sections.
@@ -824,76 +811,78 @@ class Wizard {
      * @return {{header: object, body: object}} An object containing the decoded header and body as parsed JSON objects.
      * @throws {Error} If the header or body type is invalid.
      */
-    private static binmeDecode(data: Uint8Array): { header: object; body: any; type: "json" | "text" | "hex" } {
-        const frames = Wizard.parseFrames(data);
-        if (frames.length === 0) throw new Error("No frames found");
+    private static binmeDecode(data: Uint8Array): { header: object; body: any; type: Type } {
+        let pos = 4; // skip transport header
+        let type = Type.json;
+        let header = null;
+        let body = null;
 
-        const frame = frames[0];
-        const raw = frame.decompressed ?? frame.payload;
+        // HEADER
+        const headerType = data[pos];
+        const headerCompressed = data[pos + 2] === 1;
+        const headerLen = data[pos + 8];
+        pos += 9;
 
-        // 1. Try JSON prefix extraction
+        const headerData = data.slice(pos, pos + headerLen);
+        pos += headerLen;
+
+        let headerJsonRaw = headerData;
+        if (headerCompressed) {
+            try {
+                headerJsonRaw = inflate(headerData);
+            } catch (e) {
+                console.warn("Header not compressed despite flag:", e);
+                headerJsonRaw = headerData;
+            }
+        }
+
+        // BODY
+        const bodyType = data[pos];
+        const bodyCompressed = data[pos + 2] === 1;
+        const bodyLen =
+            (data[pos + 4] << 24) |
+            (data[pos + 5] << 16) |
+            (data[pos + 6] << 8) |
+            data[pos + 7];
+
+        pos += 8;
+
+        const bodyData = data.slice(pos, pos + bodyLen);
+
+        let bodyJsonRaw = bodyData;
+        if (bodyCompressed) {
+            try {
+                bodyJsonRaw = inflate(bodyData);
+            } catch (e) {
+                console.warn("Body not compressed despite flag:", e);
+                bodyJsonRaw = bodyData;
+            }
+        }
+
+
+        // Try to parse Body first.
         try {
-            const jsonRaw = Wizard.extractJsonPrefix(raw);
-            const remainder = raw.slice(jsonRaw.length);
+            header = JSON.parse(new TextDecoder().decode(headerJsonRaw));
+            body = JSON.parse(new TextDecoder().decode(bodyJsonRaw));
+        } catch (e) {
+            // Try to parse as Text next.
+            if (Wizard.isTextData(body)) {
+                console.log(`Received Text Data: ${new TextDecoder().decode(bodyJsonRaw)}`);
 
-            const json = JSON.parse(new TextDecoder().decode(remainder));
+                header = new TextDecoder().decode(headerJsonRaw);
+                body = new TextDecoder().decode(bodyJsonRaw);
+                type = Type.text;
+            } else {
+                // Parse as Binary next.
+                header = bodyJsonRaw;
+                body = bodyJsonRaw;
 
-            return {
-                header: frame,
-                body: json,
-                type: "json"
-            };
-        } catch (_) {
-            // 2. Try text
-            if (Wizard.isTextData(raw)) {
-                return {header: frame, body: new TextDecoder().decode(raw), type: "text"};
+                type = Type.hex;
             }
-
-            // 3. Fallback: hex dump
-            const hex = [...raw].map(b => b.toString(16).padStart(2, "0")).join(" ");
-            return {header: frame, body: hex, type: "hex"};
-        }
-    }
-
-
-    /**
-     * Parses an array of data into a sequence of frames.
-     *
-     * @param {Uint8Array} data - The input data to be parsed into frames.
-     * @return {Frame[]} An array of parsed frames, each containing frame properties such as command, flags, payload type, payload data, and decompressed payload if available.
-     */
-    private static parseFrames(data: Uint8Array): Frame[] {
-        const frames: Frame[] = [];
-        let pos = 0;
-
-        while (pos + 13 <= data.length) {
-            const frameLen = (data[pos] << 8) | data[pos + 1];
-            const cmd = (data[pos + 2] << 8) | data[pos + 3];
-            const flags = data[pos + 4];
-            const payloadType = data[pos + 12];
-
-            const payloadStart = pos + 13;
-            const payloadEnd = pos + frameLen;
-
-            if (payloadEnd > data.length) break;
-
-            const payload = data.slice(payloadStart, payloadEnd);
-
-            let decompressed: Uint8Array | undefined;
-            if (payload[0] === 0x78) {
-                try {
-                    decompressed = inflate(payload);
-                } catch (e) {
-                    console.warn("inflate failed:", e);
-                }
-            }
-
-            frames.push({cmd, flags, payloadType, payload, decompressed});
-
-            pos = payloadEnd;
         }
 
-        return frames;
+
+        return {header, body, type};
     }
 
 
