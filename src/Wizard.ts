@@ -13,6 +13,8 @@ class Wizard {
     // Normaly it's UACC-SFP-Wizard don't know why Edge display it as Sfp Wizard.
     private static wizardSSID = "Sfp Wizard";
 
+    private static apiRx = {expectedLen: 0, buffer: new Uint8Array(0)};
+
     // Store DOM Element Intances.
     private static connectButton: JQuery<HTMLElement>;
     private static poweroffButton: JQuery<HTMLElement>;
@@ -636,37 +638,37 @@ class Wizard {
         console.log("Adding NotifyChar Listener");
 
         Wizard.notifyChar.addEventListener("characteristicvaluechanged", (event) => {
-            // Parse Array from Buffer.
             const buf = new Uint8Array((event.target as BluetoothRemoteGATTCharacteristic).value!.buffer);
 
+            // Parse multiple packet chunks into one.
+            const full = Wizard.reassembleApiPacket(buf);
+
+            // Skip if no full packet.
+            if (!full) return;
+
             // Decode Byte Array to Object.
-            const decoded = Wizard.binmeDecode(buf);
+            const decoded = Wizard.binmeDecode(full);
 
             // Print Debug Message.
             console.log("API Response:", decoded);
 
-            // Parse ID from Header.
             // @ts-ignore
             const id = decoded.header.id;
 
-            // Check if API Response contains callback ID.
             if (Wizard.apiResolvers.has(id)) {
                 const resolver = Wizard.apiResolvers.get(id)!;
-
                 Wizard.apiResolvers.delete(id);
 
                 try {
-                    // Set Log Message.
                     this.setLog(JSON.stringify(decoded), false);
-                } catch (e) {
-                    // Do nothing.
+                } catch {
                 }
-
 
                 resolver(decoded);
             }
         });
     }
+
 
     /**
      * Adds an event listener to handle characteristic value changes for the "writeChar" property.
@@ -874,6 +876,41 @@ class Wizard {
         return out;
     }
 
+    /**
+     * Reassembles a fragmented API packet by accumulating incoming chunks and extracting a complete packet when all parts are received.
+     *
+     * @param {Uint8Array} chunk A fragment or chunk of the API packet received for assembly.
+     * @return {Uint8Array | null} The complete assembled API packet if all parts are received, or null if not enough data is available yet.
+     */
+    private static reassembleApiPacket(chunk: Uint8Array): Uint8Array | null {
+        const ctx = Wizard.apiRx;
+
+        // First chunk read header.
+        if (ctx.buffer.length === 0 && chunk.length >= 4) {
+            ctx.expectedLen = (chunk[0] << 8) | chunk[1];
+            console.log("Expected total length:", ctx.expectedLen);
+        }
+
+        // Combine a chunk with the existing buffer
+        const combined = new Uint8Array(ctx.buffer.length + chunk.length);
+        combined.set(ctx.buffer, 0);
+        combined.set(chunk, ctx.buffer.length);
+        ctx.buffer = combined;
+
+        // Check if chunk is complete.
+        if (ctx.expectedLen > 0 && ctx.buffer.length >= ctx.expectedLen) {
+            const full = ctx.buffer.slice(0, ctx.expectedLen);
+
+            // Reset für nächsten Frame
+            ctx.buffer = new Uint8Array(0);
+            ctx.expectedLen = 0;
+
+            return full;
+        }
+
+        return null;
+    }
+
 
     /**
      * Encodes the input JSON and body data into a binary format with a transport header,
@@ -952,7 +989,8 @@ class Wizard {
      * @return {{header: object, body: object}} An object containing the decoded header and body as parsed JSON objects.
      * @throws {Error} If the header or body type is invalid.
      */
-    private static binmeDecode(data: Uint8Array): { header: object; body: object; } {
+    private static binmeDecode(data: Uint8Array): { header: object; body: object; type: FormatType } {
+        let type = FormatType.json;
         let pos = 4; // skip transport header
 
         console.error(data);
@@ -980,7 +1018,13 @@ class Wizard {
             }
         }
 
-        const header = JSON.parse(new TextDecoder().decode(headerJsonRaw));
+        let header;
+
+        try {
+            header = JSON.parse(new TextDecoder().decode(headerJsonRaw));
+        } catch (e) {
+            // Do nothing.
+        }
 
         // BODY
         const bodyType = data[pos];
@@ -1009,9 +1053,16 @@ class Wizard {
             }
         }
 
-        const body = JSON.parse(new TextDecoder().decode(bodyJsonRaw));
+        let body;
 
-        return {header, body};
+        try {
+            body = JSON.parse(new TextDecoder().decode(bodyJsonRaw));
+        } catch (e) {
+            body = bodyJsonRaw;
+            type = FormatType.binary;
+        }
+
+        return {header, body, type};
     }
 
 
@@ -1210,26 +1261,31 @@ class Wizard {
      *
      * @return {Promise<void*/
     private async saveXSFP() {
-        // Start Reading of Module.
-        return await this.startReadingProcess().then(async (r) => {
-            const data = (r as any).body;
+        return await this.cancelSync().then(async (r) => {
+            // Start Reading of Module.
+            return await this.startReadingProcess().then(async (r) => {
+                const data = (r as any).body;
 
-            if (data.size == undefined || data.chunk == undefined) {
-                Notify.warning(i18next.t("common:module-error"));
-                //throw new Error("size or chunk required");
-            } else {
-                // Show Read Notification.
-                Notify.info(i18next.t("common:module-read"));
+                if (data.size == undefined || data.chunk == undefined) {
+                    Notify.warning(i18next.t("common:module-error"));
+                    //throw new Error("size or chunk required");
+                } else {
+                    // Show Read Notification.
+                    Notify.info(i18next.t("common:module-read"));
 
-                // Print Debug Message.
-                console.log(`Received size: ${data.size} and chunk: ${data.chunk}.`);
+                    // Print Debug Message.
+                    console.log(`Received size: ${data.size} and chunk: ${data.chunk}.`);
 
-                // Get Data from Device.
-                await this.startStreamProcess(0, (data.size = 0 ? 512 : data.size)).then((r) => {
-                    // Show Saved Notification.
-                    Notify.success(i18next.t("common:module-saved"));
-                });
-            }
+                    // Get Data from Device.
+                    await this.startStreamProcess(0, (data.size = 0 ? 512 : data.size)).then((r) => {
+                        // Download SFP File to Device.
+                        this.downloadStream(r);
+
+                        // Show Saved Notification.
+                        Notify.success(i18next.t("common:module-saved"));
+                    });
+                }
+            });
         });
     }
 
@@ -1370,6 +1426,76 @@ class Wizard {
         }
 
         return textChars / data.length > 0.9;
+    }
+
+    /**
+     * Cancels the ongoing synchronization process by sending a POST request to the specified API endpoint.
+     *
+     * @return {Promise<any>} A promise that resolves with the response of the API request.
+     */
+    private async cancelSync(): Promise<any> {
+        return await Wizard.sendApiRequest("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/cancel`);
+    }
+
+    /**
+     * Downloads a binary data stream as a file.
+     *
+     * @param {Object} r - The response object containing the binary stream data.
+     * @param {any} r.body - The binary data to be downloaded.
+     * @return {void} This method does not return a value, it triggers a file download.
+     */
+    private downloadStream(r: any) {
+        // Create a Blob from the binary data.
+        const blob = new Blob([r.body], {type: "octet/stream"});
+
+        // Create a link pointing to the ObjectURL containing the blob.
+        const triggerDownload = document.createElement('a');
+
+        // Create Temp URL for Blob.
+        const tmpUrl = window.URL.createObjectURL(blob);
+
+        // Set the download attribute of the link from Blob.
+        triggerDownload.href = tmpUrl;
+
+        // Set the file name of the download link.
+        triggerDownload.download = "sfp_data.uieeprom";
+
+        // Append to Body.
+        document.body.appendChild(triggerDownload);
+
+        // Exccute Download.
+        triggerDownload.click();
+
+        // Remove from Body.
+        triggerDownload.remove();
+
+        // Revoke Object URL.
+        window.URL.revokeObjectURL(tmpUrl);
+
+        // Print Debug Message.
+        console.log(`Download completed for ${tmpUrl}`)
+    }
+
+    /**
+     * Decodes and extracts vendor, serial number, and part information from the given EEPROM data.
+     *
+     * @param {Uint8Array} data - The raw EEPROM data to be parsed.
+     * @return {Object} An object containing the extracted information with the following keys:
+     *                  - vendor: The vendor name as a string.
+     *                  - sn: The serial number as a string.
+     *                  - part: The part identifier as a string.
+     *                  If the data length is less than 96 bytes, returns default values with "-" for all keys.
+     */
+    private static fetchEEPROM(data: Uint8Array): { vendor: string; sn: string; part: string } {
+        if (data.length < 96) {
+            return {vendor: "-", sn: "-", part: "-"};
+        }
+
+        const vendor = new TextDecoder().decode(data.slice(20, 36)).trim();
+        const pn = new TextDecoder().decode(data.slice(40, 56)).trim();
+        const sn = new TextDecoder().decode(data.slice(68, 84)).trim();
+
+        return {vendor: vendor, sn: pn, part: sn};
     }
 
 }

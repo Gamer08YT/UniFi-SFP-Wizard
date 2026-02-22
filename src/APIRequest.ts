@@ -6,3 +6,6 @@ export interface APIRequest {
     path: string;
     headers: {};
 }
+
+export class APIReceive {
+}
