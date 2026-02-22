@@ -15,6 +15,7 @@ Feel free to contribute to this project.
   - Shutdown
   - Rename
   - Battery Control
+  - Device Info
 - SFP Functions
   - Read EEPROM
   - Write EEPROM [X]
