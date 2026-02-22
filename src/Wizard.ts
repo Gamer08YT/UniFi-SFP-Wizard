@@ -127,7 +127,7 @@ class Wizard {
      */
     private static setControls(state: boolean): void {
 
-        $("#wizard-controls").children(".btn-group").children("button").each((index, element) => {
+        $(".needConnected").children("button").each((index, element) => {
             if (state) {
                 $(element).removeAttr("disabled");
             } else {
