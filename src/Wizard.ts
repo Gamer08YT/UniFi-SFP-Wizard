@@ -5,8 +5,6 @@ import {GATTUUID} from "./GATTUUID";
 import {APIRequest} from "./APIRequest";
 import {Confirm, Loading, Notify} from "notiflix";
 import {deflate, inflate} from "pako";
-import {Secret} from "./Secret";
-
 
 class Wizard {
     // Normaly it's UACC-SFP-Wizard don't know why Edge display it as Sfp Wizard.
@@ -94,7 +92,7 @@ class Wizard {
      * @return {Promise<Object>} A promise that resolves with the response of the reboot request.
      */
     public static async reboot() {
-        return await Wizard.sendApiRequest("POST", `/api/1.0/${this.handleMAC(Secret.Mac)}/reboot`);
+        return await Wizard.sendApiRequest("POST", `/api/1.0/${this.handleMAC(Wizard.deviceId)}/reboot`);
     }
 
     /**
@@ -372,7 +370,7 @@ class Wizard {
      * @return {Promise<Object>} A promise that resolves to the response data containing the settings.
      */
     private static async getSettings() {
-        return await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/settings`);
+        return await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Wizard.deviceId)}/settings`);
     }
 
     /**
@@ -381,7 +379,7 @@ class Wizard {
      * @return {Promise<Object>} A promise that resolves with the Bluetooth data in the response.
      */
     private static async getBluetooth() {
-        return await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/bt`);
+        return await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Wizard.deviceId)}/bt`);
     }
 
     /**
@@ -392,7 +390,7 @@ class Wizard {
      */
     private static async queryDeviceInfo(): Promise<void> {
         // Query Device Info.
-        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}`).then(r => {
+        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Wizard.deviceId)}`).then(r => {
             const data = (r as any).body;
 
             this.setText("name", data.name);
@@ -924,7 +922,7 @@ class Wizard {
      * @return {Promise<void>} A promise that resolves when the firmware information has been retrieved and processed.
      */
     private static async queryFirmwareInfo(): Promise<void> {
-        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Secret.Mac)}/fw`).then(r => {
+        await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Wizard.deviceId)}/fw`).then(r => {
             const data = (r as any).body;
 
             this.setText("firmware", data.fwv);
@@ -987,7 +985,7 @@ class Wizard {
      *
      */
     private async readXSFP() {
-        await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Secret.Mac)}/xsfp/module/details`).then((r) => {
+        await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/details`).then((r) => {
             const data = (r as any).body;
 
             /**
@@ -1050,7 +1048,7 @@ class Wizard {
      * @return {Promise<Object>} A promise that resolves to the response of the API request.
      */
     private async startReadingProcess() {
-        return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Secret.Mac)}/xsfp/module/start`);
+        return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/start`);
     }
 
     /**
@@ -1061,7 +1059,7 @@ class Wizard {
      * @return {Promise<any>} A promise that resolves with the response from the API request.
      */
     private async startStreamProcess(offset: number, size: any): Promise<any> {
-        return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Secret.Mac)}/xsfp/module/data`, {
+        return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/data`, {
             offset: offset,
             chunk: size
         });
