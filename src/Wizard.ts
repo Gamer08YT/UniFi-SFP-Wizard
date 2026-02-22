@@ -987,27 +987,33 @@ class Wizard {
     private async readXSFP() {
         await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/details`).then((r) => {
             const data = (r as any).body;
+            const header = (r as any).header;
 
-            /**
-             * {
-             *   "partNumber": "SFP-10GLR-31",
-             *   "rev": "A",
-             *   "vendor": "S2301169979",
-             *   "sn": "S2301169979",
-             *   "type": "sfp",
-             *   "compliance": "10G BASE-LR"
-             * }
-             */
+            if (header.statusCode !== undefined && header.statusCode == 200) {
+                /**
+                 * {
+                 *   "partNumber": "SFP-10GLR-31",
+                 *   "rev": "A",
+                 *   "vendor": "S2301169979",
+                 *   "sn": "S2301169979",
+                 *   "type": "sfp",
+                 *   "compliance": "10G BASE-LR"
+                 * }
+                 */
 
-            Wizard.setModule("part", data.partNumber);
-            Wizard.setModule("rev", data.rev);
-            Wizard.setModule("vendor", data.vendor);
-            Wizard.setModule("sn", data.sn);
-            Wizard.setModule("type", data.type);
-            Wizard.setModule("compliance", data.compliance);
+                Wizard.setModule("part", data.partNumber);
+                Wizard.setModule("rev", data.rev);
+                Wizard.setModule("vendor", data.vendor);
+                Wizard.setModule("sn", data.sn);
+                Wizard.setModule("type", data.type);
+                Wizard.setModule("compliance", data.compliance);
 
-            // Print Success Toast.
-            Notify.success(i18next.t("common:module-message"));
+                // Print Success Toast.
+                Notify.success(i18next.t("common:module-message"));
+            } else {
+                // Print Warning Toast.
+                Notify.warning(i18next.t("common:module-error"));
+            }
         });
     }
 

@@ -24,5 +24,6 @@
   "module-message": "Fibre Module successfully read.",
   "module-read": "Module EEPROM was read successfully, saving Data now.",
   "module-saved": "Module EEPROM was saved successfully from Wizard.",
+  "module-error": "Unable to read Module, please unplug and plug it back in.",
   "mac-failed": "Unable to retrieve MAC Address, please try again."
 }
