@@ -128,10 +128,12 @@ class Wizard {
     private static setControls(state: boolean): void {
 
         $(".needConnected").children("button").each((index, element) => {
-            if (state) {
-                $(element).removeAttr("disabled");
-            } else {
-                $(element).attr("disabled", "disabled");
+            if (!$(element).hasClass("ignoreConnect")) {
+                if (state) {
+                    $(element).removeAttr("disabled");
+                } else {
+                    $(element).attr("disabled", "disabled");
+                }
             }
         });
 
@@ -1399,6 +1401,7 @@ class Wizard {
         Wizard.readButton.text(i18next.t("common:read"));
         Wizard.saveButton.text(i18next.t("common:save"));
         Wizard.writeButton.text(i18next.t("common:write"));
+        Wizard.nameButton.text(i18next.t("common:name-title"));
 
         $("#autoscroll-label"
         ).text(i18next.t("common:autoscroll"));
