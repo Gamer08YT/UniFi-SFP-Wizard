@@ -284,14 +284,17 @@ class Wizard {
         Wizard.writeButton.on("click", () => {
             if (this.checkEEPROMSelection()) {
                 this.writeXSFP().then(r => {
-                    const header = (r as any).header;
+                    if (r !== undefined) {
+                        const header = (r as any).header;
 
-                    if (header.statusCode == 200) {
-                        Notify.success(i18next.t("common:eeprom-dump-send"));
+                        if (header.statusCode == 200) {
+                            Notify.success(i18next.t("common:eeprom-dump-send"));
+                        } else {
+                            Notify.failure(i18next.t("common:eeprom-sync-error"));
+                        }
                     } else {
-                        Notify.failure(i18next.t("eeprom-sync-error"));
+                        Notify.failure(i18next.t("common:eeprom-sync-nomodule"));
                     }
-
                 });
             } else {
                 // Notify for wrong EEPROM Selection.
@@ -1317,8 +1320,10 @@ class Wizard {
     private async writeXSFP() {
         return await this.cancelSync().then(async (r) => {
             return await this.readFile().then(async (eeprom) => {
+                const size = eeprom?.length;
+
                 // Check for the correct File Type.
-                if (eeprom != null && (eeprom.length == 512 || eeprom?.length == 640)) {
+                if (eeprom !== null && (size == 512 || size == 640)) {
                     // Request new Snapshot Transmission.
                     return await Wizard.sendApiRequest("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/start`, {size: size}).then(async (r) => {
                         const data = (r as any).header;
