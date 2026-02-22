@@ -1,4 +1,4 @@
-import $ from "jquery";
+import $, {error} from "jquery";
 import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
 import {GATTUUID} from "./GATTUUID";
@@ -34,6 +34,9 @@ class Wizard {
     private static service: BluetoothRemoteGATTService;
 
     private static requestCounter = 0;
+
+    // Store Wizard Mac to Query via Service V2 (Hybrid HTTP API).
+    private static deviceId: any;
 
 
     constructor() {
@@ -145,7 +148,7 @@ class Wizard {
                     // @ts-ignore
                     navigator.bluetooth.requestDevice({
                         acceptAllDevices: true,
-                        optionalServices: [this.normalizeUuid(GATTUUID.WriteChar), this.normalizeUuid(GATTUUID.NotifyChar), this.normalizeUuid(GATTUUID.SecondaryNotify), this.normalizeUuid(GATTUUID.Service2)],
+                        optionalServices: [this.normalizeUuid(GATTUUID.WriteChar), this.normalizeUuid(GATTUUID.NotifyChar), this.normalizeUuid(GATTUUID.SecondaryNotify), this.normalizeUuid(GATTUUID.Service2), this.normalizeUuid(GATTUUID.Service)],
                     }).then(device => {
                         console.log(device);
 
@@ -339,9 +342,21 @@ class Wizard {
             this.setConnected(false);
         })
 
+        // Just a dirty hack to get the device mac.
+        await Wizard.sendCommand("chargeCtrl", 5000).then(response => {
+            const data = JSON.parse(Wizard.decodeJSON(response))
+
+            // Check if API Response contains Mac ID.
+            if (data.id != undefined) {
+                Wizard.deviceId = data.id;
+            } else {
+                Notify.failure(i18next.t("common:mac-failed"));
+            }
+
+        });
+
         // Send Connected Notification.
         Notify.success(i18next.t("common:connected"));
-
 
         // Query Device Meta.
         await this.queryDeviceInfo();
@@ -441,7 +456,6 @@ class Wizard {
         Wizard.infoChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.NotifyChar));
         Wizard.notifyChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.SecondaryNotify));
         //Wizard.apiNotifyChar = await Wizard.service.getCharacteristic(this.normalizeUuid(GATTUUID.Service2));
-
 
         // Print Debug Message.
         console.log("Notify Service and Characteristics Retrieved");
