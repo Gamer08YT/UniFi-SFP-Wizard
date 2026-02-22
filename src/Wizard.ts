@@ -19,21 +19,22 @@ class Wizard {
     private static saveButton: JQuery<HTMLElement>;
     private static writeButton: JQuery<HTMLElement>;
     private static chargeControlButton: JQuery<HTMLElement>;
+    private static autoscrollSwitch: JQuery<HTMLElement>;
 
     // Store GATT Characteristic Instances.
     private static infoChar: BluetoothRemoteGATTCharacteristic;
     private static apiNotifyChar: BluetoothRemoteGATTCharacteristic;
     private static writeChar: BluetoothRemoteGATTCharacteristic;
-    private static notifyChar: BluetoothRemoteGATTCharacteristic;
 
+    private static notifyChar: BluetoothRemoteGATTCharacteristic;
     // Store BLE Device Instance.
     private static device: BluetoothDevice;
     private static pendingResolver: ((data: Uint8Array) => void) | null = null;
     private static apiResolvers: Map<string, (data: any) => void> = new Map();
+
     private static service: BluetoothRemoteGATTService;
 
     private static requestCounter = 0;
-
     // Store Wizard Mac to Query via Service V2 (Hybrid HTTP API).
     private static deviceId: any;
 
@@ -309,6 +310,7 @@ class Wizard {
         Wizard.readButton = $("#read-sfp");
         Wizard.writeButton = $("#write-sfp");
         Wizard.saveButton = $("#save-sfp");
+        Wizard.autoscrollSwitch = $("#autoscroll");
     }
 
     /**
@@ -1110,6 +1112,10 @@ class Wizard {
      */
     private static setLog(s: string, legacy: boolean) {
         $("#log-container").append(`<div title="${legacy ? i18next.t("common:api-legacy") : i18next.t("common:api-new")}" class="log"><a>${this.formatTimeHHMMSS()} - </a><code>${s}</code></div>`);
+
+        if (this.hasAutoscroll()) {
+            Wizard.scrollLogToBottom();
+        }
     }
 
     /**
@@ -1149,8 +1155,29 @@ class Wizard {
         Wizard.saveButton.text(i18next.t("common:save"));
         Wizard.writeButton.text(i18next.t("common:write"));
 
+        $("#autoscroll-label").text(i18next.t("common:autoscroll"));
+
         // Clear Fields.
         Wizard.clearFields();
+    }
+
+
+    /**
+     * Scrolls the log container to the bottom of its content, ensuring the latest log entries are visible.
+     *
+     * @return {void} This method does not return a value.
+     */
+    private static scrollLogToBottom(): void {
+        $("#log-container").scrollTop($("#log-container")[0].scrollHeight);
+    }
+
+    /**
+     * Checks whether the autoscroll option is enabled by verifying the state of the autoscroll switch.
+     *
+     * @return {boolean} Returns true if the autoscroll switch is checked, otherwise false.
+     */
+    private static hasAutoscroll(): boolean {
+        return Wizard.autoscrollSwitch.is(":checked");
     }
 }
 

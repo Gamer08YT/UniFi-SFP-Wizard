@@ -32,5 +32,6 @@
   "module-error": "Unable to read Module, please unplug and plug it back in.",
   "mac-failed": "Unable to retrieve MAC Address, please try again.",
   "api-new": "New API",
-  "api-legacy": "Legacy API"
+  "api-legacy": "Legacy API",
+  "autoscroll": "Autoscroll the Log"
 }
