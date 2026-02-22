@@ -1310,7 +1310,7 @@ class Wizard {
                 const data = (r as any).header;
 
                 // Check if Snapshot is Ready to be sent.
-                if(data.statusCode == 200) {
+                if (data.statusCode == 200) {
                     // Send Snapshot.
                     Wizard.sendApiRequestRaw("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/data`, eeprom).then(async (r) => {
                         const data = (r as any).header;
@@ -1607,9 +1607,107 @@ class Wizard {
         return !!(el && el.files && el.files.length > 0);
     }
 
-    private static sendApiRequestRaw(post: string, s: string, eeprom: Uint8Array<ArrayBuffer>) {
-        
+    /**
+     * Sends a raw API request via BLE (Bluetooth Low Energy), encoded as a binary packet.
+     *
+     * @param {"GET" | "POST"} method - The HTTP method to use for the request.
+     * @param {string} path - The endpoint path for the request.
+     * @param {Uint8Array} rawBody - The raw binary content of the request body.
+     * @param {number} [timeoutMs=60] - The timeout in milliseconds to await a response, defaults to 60ms.
+     * @return {Promise<any>} A promise that resolves when a response to the request is received or rejects if an error occurs or the timeout is reached.
+     */
+    private static async sendApiRequestRaw(
+        method: "GET" | "POST",
+        path: string,
+        rawBody: Uint8Array,
+        timeoutMs: number = 60
+    ) {
+        // Print Debug Message.
+        console.log(`Sending RAW API Request: ${method} ${path}`);
+
+        // Get new ID.
+        const [id, seq] = Wizard.nextRequestId();
+
+        // Prepare Request Frame.
+        const req: APIRequest = {
+            type: "httpRequest",
+            id,
+            timestamp: Date.now(),
+            method,
+            path,
+            headers: {}
+        };
+
+        // Prepare Request Header.
+        const headerJson = new TextEncoder().encode(JSON.stringify(req));
+
+        // Print Debug Message.
+        console.log(`JSON header:`, JSON.stringify(req));
+        console.log(`Binary body: ${rawBody.length} bytes`);
+
+        // Encode binme RAW packet
+        const packet = Wizard.binmeEncodeRawBody(headerJson, rawBody, seq);
+        console.log(`Total encoded packet size: ${packet.length} bytes`);
+
+        // Register resolver BEFORE sending
+        const promise = new Promise((resolve, reject) => {
+            Wizard.apiResolvers.set(id, resolve);
+
+            // Timeout handling
+            setTimeout(() => {
+                if (Wizard.apiResolvers.has(id)) {
+                    Wizard.apiResolvers.delete(id);
+                    reject(new Error(`Timeout waiting for response to request ${id}`));
+                }
+            }, timeoutMs);
+        });
+
+        // BLE fragmentation
+        const bleMTU = 244;
+
+        // Send Chunks.
+        for (let offset = 0; offset < packet.length; offset += bleMTU) {
+            const end = Math.min(offset + bleMTU, packet.length);
+            const chunk = packet.slice(offset, end);
+
+            console.log(`Writing BLE fragment ${offset}-${end} (${chunk.length} bytes)`);
+
+            const maxRetries = 5;
+            let lastErr: any = null;
+
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    // Web Bluetooth writeWithoutResponse
+                    // @ts-ignore
+                    await Wizard.writeChar.writeValueWithoutResponse(chunk);
+                    lastErr = null;
+                    break;
+                } catch (err) {
+                    lastErr = err;
+                    if (attempt < maxRetries) {
+                        const backoff = 20 * (1 << attempt); // 20, 40, 80, 160, 320ms
+                        console.warn(
+                            `BLE write failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${backoff}ms`,
+                            err
+                        );
+                        await new Promise(res => setTimeout(res, backoff));
+                    }
+                }
+            }
+
+            // Check for errors
+            if (lastErr) {
+                throw new Error(
+                    `Failed to write BLE fragment at offset ${offset} after ${maxRetries + 1} attempts: ${lastErr}`
+                );
+            }
+        }
+
+        // Return promise that resolves when notification arrives
+        return promise;
     }
+
+
 }
 
 new Wizard();
