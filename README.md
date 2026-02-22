@@ -31,6 +31,8 @@ Feel free to contribute, every help is appreciated!
 
 If you want to contribute a EEPROM profile, please create a pull request.
 
+Please upload your EEPROM Dump into the <code>repository</code> Folder and add an entry to the <code>dumps.json</code> File.
+
 ## Known Issues
 
 Due to limitations of the Web Bluetooth API, i can't read the MAC from the Device on first connect.
