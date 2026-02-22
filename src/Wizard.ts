@@ -1,4 +1,4 @@
-import $, {data} from "jquery";
+import $ from "jquery";
 import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
 import * as deCommon from "./language/de-DE.json";
@@ -8,6 +8,7 @@ import {Confirm, Loading, Notify} from "notiflix";
 import {deflate, inflate} from "pako";
 import {ProtocolType} from "./ProtocolType";
 import {FormatType} from "./FormatType";
+import {Repository} from "./Repository";
 
 class Wizard {
     // Normaly it's UACC-SFP-Wizard don't know why Edge display it as Sfp Wizard.
@@ -57,6 +58,9 @@ class Wizard {
 
         // Prepare Listeners.
         this.registerListeners();
+
+        // Fetch Repository.
+        Repository.fetchTemplates();
     }
 
     /**
