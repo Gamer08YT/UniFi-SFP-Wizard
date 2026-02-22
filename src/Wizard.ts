@@ -393,7 +393,7 @@ class Wizard {
         })
 
         // Just a dirty hack to get the device mac.
-        await Wizard.sendCommand("chargeCtrl", 5000).then(response => {
+        await Wizard.sendCommand("getVer", 5000).then(response => {
             const data = JSON.parse(Wizard.decodeJSON(response))
 
             // Check if API Response contains Mac ID.

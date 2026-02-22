@@ -24,7 +24,7 @@ Normally the Service 1 Channel should contain the MAC on first connecting but it
 
 I use a dirty workaround to get the MAC, because in the API V1 the MAC is available in any Basic Response.
 
-So I use the <code>chargeCtl</code> Command to get the MAC after a successful connection.
+So I use the <code>getVer</code> Command to get the MAC after a successful connection.
 
 ## Credits
 
