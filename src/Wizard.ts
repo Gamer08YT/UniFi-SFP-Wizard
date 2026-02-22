@@ -284,7 +284,14 @@ class Wizard {
         Wizard.writeButton.on("click", () => {
             if (this.checkEEPROMSelection()) {
                 this.writeXSFP().then(r => {
-                    Notify.success(i18next.t("common:eeprom-dump-send"));
+                    const header = (r as any).header;
+
+                    if(header.statusCode == 200){
+                        Notify.success(i18next.t("common:eeprom-dump-send"));
+                    }else{
+                        Notify.failure(i18next.t("eeprom-sync-error"));
+                    }
+
                 });
             } else {
                 // Notify for wrong EEPROM Selection.
@@ -1300,21 +1307,26 @@ class Wizard {
         });
     }
 
+    /**
+     * Initiates and handles the XSFP snapshot synchronization process.
+     * This method cancels any ongoing synchronization, requests a new snapshot transmission,
+     * and sends the snapshot data if the transmission is ready.
+     *
+     * @return {Promise<any>} A promise resolving to the result of the API request for synchronization data.
+     */
     private async writeXSFP() {
         return await this.cancelSync().then(async (r) => {
             const size = 512;
             const eeprom = new Uint8Array(size);
 
             // Request new Snapshot Transmission.
-            Wizard.sendApiRequest("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/start`, {size: size}).then(async (r) => {
+            return await Wizard.sendApiRequest("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/start`, {size: size}).then(async (r) => {
                 const data = (r as any).header;
 
                 // Check if Snapshot is Ready to be sent.
                 if (data.statusCode == 200) {
                     // Send Snapshot.
-                    Wizard.sendApiRequestRaw("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/data`, eeprom).then(async (r) => {
-                        const data = (r as any).header;
-                    })
+                    return await Wizard.sendApiRequestRaw("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/data`, eeprom);
                 } else {
                     // Notify Error.
                     Notify.failure(i18next.t("common:eeprom-sync-error"));
@@ -1621,7 +1633,7 @@ class Wizard {
         path: string,
         rawBody: Uint8Array,
         timeoutMs: number = 60
-    ) {
+    ): Promise<any> {
         // Print Debug Message.
         console.log(`Sending RAW API Request: ${method} ${path}`);
 
