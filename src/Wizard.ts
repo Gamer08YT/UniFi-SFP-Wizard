@@ -776,7 +776,7 @@ class Wizard {
         // Body section (8 bytes + compressed body)
         const bodySection = new Uint8Array(8 + compressedBody.length);
 
-        bodySection[0] = ProtocolType.TypeHeader;
+        bodySection[0] = ProtocolType.TypeBody;
         bodySection[1] = FormatType.json;
         bodySection[2] = 0x01;
         bodySection[3] = 0x00;
@@ -795,8 +795,6 @@ class Wizard {
         out[3] = seq & 0xff;
         out.set(headerSection, 4);
         out.set(bodySection, 4 + headerSection.length);
-
-        console.log(out);
 
         return out;
     }
@@ -941,16 +939,16 @@ class Wizard {
      * @return {{header: object, body: object}} An object containing the decoded header and body as parsed JSON objects.
      * @throws {Error} If the header or body type is invalid.
      */
-    private static
-
-    binmeDecode(data: Uint8Array): { header: object; body: object; } {
+    private static binmeDecode(data: Uint8Array): { header: object; body: object; } {
         let pos = 4; // skip transport header
+
+        console.error(data);
 
         // HEADER
         const headerType = data[pos];
 
         // Throw error if header type is not 0x03
-        if (headerType !== ProtocolType.TypeHeader) throw new Error(`Expected header type ${ProtocolType.TypeHeader}, got ${headerType} instead`);
+        //if (headerType !== ProtocolType.TypeHeader) throw new Error(`Expected header type ${ProtocolType.TypeHeader}, got ${headerType} instead`);
 
         const headerCompressed = data[pos + 2] === 1;
         const headerLen = data[pos + 8];
@@ -1010,16 +1008,7 @@ class Wizard {
      * @param {"GET" | "POST"} method - The HTTP method to use for the request.
      * @param bodyObj
      * @param {string} path*/
-    private static async
-
-    sendApiRequest(method
-                   :
-                       "GET" | "POST", path
-                   :
-                   string, bodyObj
-                   :
-                   any = {}
-    ) {
+    private static async sendApiRequest(method: "GET" | "POST", path: string, bodyObj: any = {}) {
         console.log(`Sending API Request: ${method} ${path}`);
 
         const [id, seq] = Wizard.nextRequestId();
@@ -1035,11 +1024,6 @@ class Wizard {
 
         const headerJson = new TextEncoder().encode(JSON.stringify(req));
         const bodyJson = new TextEncoder().encode(JSON.stringify(bodyObj));
-
-        // Debug Body Field.
-        if (bodyObj !== undefined) {
-            console.log("Body:", bodyObj);
-        }
 
         // Encode Packet.
         const packet = Wizard.binmeEncode(headerJson, bodyJson, seq);
@@ -1061,13 +1045,7 @@ class Wizard {
      * @param {string} mac - The MAC address to be processed, typically in the format with colons (e.g., "00:1A:2B:3C:4D:5E").
      * @return {string} The processed MAC address as a string without colons, converted to lowercase.
      */
-    private static
-
-    handleMAC(mac
-              :
-              string
-    ):
-        string {
+    private static handleMAC(mac: string): string {
         return mac.replace(/:/g, "").toLowerCase();
     }
 
@@ -1078,17 +1056,8 @@ class Wizard {
      * @param {string} value - The value to be set for the input field.
      * @return {void} This method does not return a value.
      */
-    private static
-
-    setValue(name
-             :
-             string, value
-             :
-             string
-    ):
-        void {
-        $("#device-" + name
-        ).val(value);
+    private static setValue(name: string, value: string): void {
+        $("#device-" + name).val(value);
     }
 
     /**
@@ -1098,14 +1067,7 @@ class Wizard {
      * @param {string} value - The text content to be set for the identified HTML element.
      * @return {void} This method does not return a value.
      */
-    private static
-
-    setText(name
-            :
-            string, value
-            :
-            string
-    ) {
+    private static setText(name: string, value: string) {
         $("#device-" + name).text(value);
     }
 
@@ -1117,11 +1079,7 @@ class Wizard {
      *
      * @return {Promise<void>} A promise that resolves when the firmware information has been retrieved and processed.
      */
-    private static async
-
-    queryFirmwareInfo()
-        :
-        Promise<void> {
+    private static async queryFirmwareInfo(): Promise<void> {
         await Wizard.sendApiRequest("GET", `/api/1.0/${this.handleMAC(Wizard.deviceId)}/fw`).then(r => {
             const data = (r as any).body;
 
@@ -1135,13 +1093,7 @@ class Wizard {
      * @param {boolean} b - A boolean value where `true` activates the loader and `false` deactivates it.
      * @return {void} This method does not return a value.
      */
-    private static
-
-    setLoader(b
-              :
-              boolean
-    ):
-        void {
+    private static setLoader(b: boolean): void {
         if (b) {
             Loading.dots();
         } else {
@@ -1157,9 +1109,7 @@ class Wizard {
      *
      * @return {void} Does not return a value.
      */
-    private static
-
-    clearFields() {
+    private static clearFields() {
         // Clear Device Info Fields.
         this.setText("firmware", "-");
         this.setText("name", "-");
@@ -1181,28 +1131,19 @@ class Wizard {
      * @param {any} value - The value to set as the text content of the page element.
      * @return {void} This method does not return a value.
      */
-    private
-
-    setPage(key
-            :
-            string, value
-            :
-            any
-    ):
-        void {
+    private setPage(key: string, value: any): void {
         $("#page-" + key
         ).text(value);
     }
 
-    private static
-
-    setModule(key
-              :
-              string, value
-              :
-              any
-    ):
-        void {
+    /**
+     * Updates the text content of a specified module element.
+     *
+     * @param {string} key - The identifier for the module element.
+     * @param {any} value - The value to set as the text content of the element.
+     * @return {void}
+     */
+    private static setModule(key: string, value: any): void {
         $("#sfp-" + key
         ).text(value);
     }
@@ -1214,9 +1155,7 @@ class Wizard {
      *
      * @return {Promise<void>} A promise that resolves when the XSFP details are successfully retrieved and processed.
      */
-    private async
-
-    readXSFP() {
+    private async readXSFP() {
         await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/details`).then((r) => {
             const data = (r as any).body;
             const header = (r as any).header;
@@ -1257,30 +1196,27 @@ class Wizard {
      * It ensures the presence of necessary data properties before starting the data stream process.
      *
      * @return {Promise<void*/
-    private async
-
-    saveXSFP() {
+    private async saveXSFP() {
         // Start Reading of Module.
         return await this.startReadingProcess().then(async (r) => {
             const data = (r as any).body;
 
             if (data.size == undefined || data.chunk == undefined) {
                 Notify.warning(i18next.t("common:module-error"));
-
-                throw new Error("size or chunk required");
+                //throw new Error("size or chunk required");
             } else {
                 // Show Read Notification.
                 Notify.info(i18next.t("common:module-read"));
+
+                // Print Debug Message.
+                console.log(`Received size: ${data.size} and chunk: ${data.chunk}.`);
+
+                // Get Data from Device.
+                await this.startStreamProcess(0, (data.size = 0 ? 512 : data.size)).then((r) => {
+                    // Show Saved Notification.
+                    Notify.success(i18next.t("common:module-saved"));
+                });
             }
-
-            // Print Debug Message.
-            console.log(`Received size: ${data.size} and chunk: ${data.chunk}.`);
-
-            // Get Data from Device.
-            await this.startStreamProcess(0, (data.size = 0 ? 512 : data.size)).then((r) => {
-                // Show Saved Notification.
-                Notify.success(i18next.t("common:module-saved"));
-            });
         });
     }
 
@@ -1290,9 +1226,7 @@ class Wizard {
      *
      * @return {Promise<Object>} A promise that resolves to the response of the API request.
      */
-    private async
-
-    startReadingProcess() {
+    private async startReadingProcess() {
         return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/start`);
     }
 
@@ -1303,15 +1237,7 @@ class Wizard {
      * @param {*} size - The size or amount of data to be retrieved.
      * @return {Promise<any>} A promise that resolves with the response from the API request.
      */
-    private async
-
-    startStreamProcess(offset
-                       :
-                       number, size
-                       :
-                       any
-    ):
-        Promise<any> {
+    private async startStreamProcess(offset: number, size: any): Promise<any> {
         return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/data`, {
             offset: offset,
             chunk: size
@@ -1325,11 +1251,7 @@ class Wizard {
      *
      * @return {void} This method does not return any value.
      */
-    private static
-
-    wrongBrowserBLESupport()
-        :
-        void {
+    private static wrongBrowserBLESupport(): void {
         Notify.failure(i18next.t("common:browser-ble-support"));
     }
 
@@ -1339,14 +1261,7 @@ class Wizard {
      * @param {string} s - The string to be logged in the log container.
      * @return {void} This method does not return a value.
      */
-    private static
-
-    setLog(s
-           :
-           string, legacy
-           :
-           boolean
-    ) {
+    private static setLog(s: string, legacy: boolean) {
         $("#log-container").append(`<div title="${legacy ? i18next.t("common:api-legacy") : i18next.t("common:api-new")}" class="log"><a>${this.formatTimeHHMMSS()} - </a><code>${s}</code></div>`);
 
         if (this.hasAutoscroll()) {
@@ -1358,9 +1273,7 @@ class Wizard {
      * Formats a given Date object into a time string in the format HH:mm:ss.
      * If no date is provided, the current date and time are used.
      */
-    private static
-
-    formatTimeHHMMSS(date = new Date()) {
+    private static formatTimeHHMMSS(date = new Date()) {
         const pad2 = (n: any) => String(n).padStart(2, "0");
         const HH = pad2(date.getHours());
         const mm = pad2(date.getMinutes());
@@ -1374,11 +1287,7 @@ class Wizard {
      *
      * @return {void} Does not return any value.
      */
-    private
-
-    replaceLocale()
-        :
-        void {
+    private replaceLocale(): void {
         console.log(`Locale set to ${i18next.language}`);
 
         // Set Page Texts.
@@ -1400,7 +1309,7 @@ class Wizard {
         $("#autoscroll-label"
         ).text(i18next.t("common:autoscroll"));
 
-// Clear Fields.
+        // Clear Fields.
         Wizard.clearFields();
     }
 
@@ -1410,13 +1319,8 @@ class Wizard {
      *
      * @return {void} This method does not return a value.
      */
-    private static
-
-    scrollLogToBottom()
-        :
-        void {
-        $("#log-container"
-        ).scrollTop($("#log-container")[0].scrollHeight);
+    private static scrollLogToBottom(): void {
+        $("#log-container").scrollTop($("#log-container")[0].scrollHeight);
     }
 
     /**
@@ -1424,11 +1328,7 @@ class Wizard {
      *
      * @return {boolean} Returns true if the autoscroll switch is checked, otherwise false.
      */
-    private static
-
-    hasAutoscroll()
-        :
-        boolean {
+    private static hasAutoscroll(): boolean {
         return Wizard.autoscrollSwitch.is(":checked");
     }
 
@@ -1440,12 +1340,7 @@ class Wizard {
      * @param {Uint8Array} data - The byte array to analyze for text content.
      * @return {boolean} Returns true if the data is predominantly text-based; otherwise, false.
      */
-    private static
-
-    isTextData(data
-               :
-               Uint8Array
-    ):
+    private static isTextData(data: Uint8Array):
         boolean {
         if (data.length === 0) return false;
 
