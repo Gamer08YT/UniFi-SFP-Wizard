@@ -1051,6 +1051,8 @@ class Wizard {
             const data = (r as any).body;
 
             if (data.size == undefined || data.chunk == undefined) {
+                Notify.failure(i18next.t("common:module-error"));
+
                 throw new Error("size or chunk required");
             }
 
