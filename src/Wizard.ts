@@ -6,6 +6,7 @@ import {GATTUUID} from "./GATTUUID";
 import {APIRequest} from "./APIRequest";
 import {Confirm, Loading, Notify} from "notiflix";
 import {deflate, inflate} from "pako";
+import {Frame} from "./Frame";
 
 class Wizard {
     // Normaly it's UACC-SFP-Wizard don't know why Edge display it as Sfp Wizard.
@@ -631,6 +632,7 @@ class Wizard {
             console.log("API Response:", decoded);
 
             // Parse ID from Header.
+            // @ts-ignore
             const id = decoded.header.id;
 
             // Check if API Response contains callback ID.
@@ -809,56 +811,83 @@ class Wizard {
      * @return {{header: object, body: object}} An object containing the decoded header and body as parsed JSON objects.
      * @throws {Error} If the header or body type is invalid.
      */
-    private static binmeDecode(data: Uint8Array) {
-        let pos = 4; // skip transport header
+    private static binmeDecode(data: Uint8Array): { header: object; body: any; type: "json" | "text" | "hex" } {
+        const frames = Wizard.parseFrames(data);
 
-        // HEADER
-        const headerType = data[pos];
-        const headerCompressed = data[pos + 2] === 1;
-        const headerLen = data[pos + 8];
-        pos += 9;
-
-        const headerData = data.slice(pos, pos + headerLen);
-        pos += headerLen;
-
-        let headerJsonRaw = headerData;
-        if (headerCompressed) {
-            try {
-                headerJsonRaw = inflate(headerData);
-            } catch (e) {
-                console.warn("Header not compressed despite flag:", e);
-                headerJsonRaw = headerData;
-            }
+        if (frames.length === 0) {
+            throw new Error("No frames found");
         }
 
-        const header = JSON.parse(new TextDecoder().decode(headerJsonRaw));
+        const frame = frames[0];
+        const raw = frame.decompressed ?? frame.payload;
 
-        // BODY
-        const bodyType = data[pos];
-        const bodyCompressed = data[pos + 2] === 1;
-        const bodyLen =
-            (data[pos + 4] << 24) |
-            (data[pos + 5] << 16) |
-            (data[pos + 6] << 8) |
-            data[pos + 7];
+        // 1. Try JSON
+        try {
+            const json = JSON.parse(new TextDecoder().decode(raw));
 
-        pos += 8;
-
-        const bodyData = data.slice(pos, pos + bodyLen);
-
-        let bodyJsonRaw = bodyData;
-        if (bodyCompressed) {
-            try {
-                bodyJsonRaw = inflate(bodyData);
-            } catch (e) {
-                console.warn("Body not compressed despite flag:", e);
-                bodyJsonRaw = bodyData;
-            }
+            // @ts-ignore
+            return {header: frame, body: json, type: "json"};
+        } catch (e) {
+            console.warn("Failed to parse JSON:", e);
         }
 
-        const body = JSON.parse(new TextDecoder().decode(bodyJsonRaw));
+        // 2. Try text
+        if (Wizard.isTextData(raw)) {
+            // @ts-ignore
+            return {header: frame, body: new TextDecoder().decode(raw), type: "text"};
+        }
 
-        return {header, body};
+        // 3. Fallback: hex dump
+        const hexLines: string[] = [];
+        for (let i = 0; i < raw.length; i += 16) {
+            const chunk = raw.slice(i, i + 16);
+            const hex = Array.from(chunk).map(b => b.toString(16).padStart(2, "0")).join(" ");
+            hexLines.push(i.toString(16).padStart(4, "0") + ": " + hex);
+        }
+
+        // @ts-ignore
+        return {header: frame, body: hexLines.join("\n"), type: "hex"};
+    }
+
+
+    /**
+     * Parses an array of data into a sequence of frames.
+     *
+     * @param {Uint8Array} data - The input data to be parsed into frames.
+     * @return {Frame[]} An array of parsed frames, each containing frame properties such as command, flags, payload type, payload data, and decompressed payload if available.
+     */
+    private static parseFrames(data: Uint8Array): Frame[] {
+        const frames: Frame[] = [];
+        let pos = 0;
+
+        while (pos + 13 <= data.length) {
+            const frameLen = (data[pos] << 8) | data[pos + 1];
+            const cmd = (data[pos + 2] << 8) | data[pos + 3];
+            const flags = data[pos + 4];
+            const payloadType = data[pos + 12];
+
+            const payloadStart = pos + 13;
+            const payloadEnd = pos + frameLen;
+
+            if (payloadEnd > data.length) break;
+
+            const payload = data.slice(payloadStart, payloadEnd);
+
+            let decompressed: Uint8Array | undefined;
+            if (payload[0] === 0x78) {
+                try {
+                    decompressed = inflate(payload);
+                } catch (e) {
+                    console.warn("inflate failed:", e);
+                }
+            }
+
+            frames.push({cmd, flags, payloadType, payload, decompressed});
+
+            pos = payloadEnd;
+        }
+
+        return frames;
     }
 
 
@@ -1187,6 +1216,33 @@ class Wizard {
     private static hasAutoscroll(): boolean {
         return Wizard.autoscrollSwitch.is(":checked");
     }
+
+    /**
+     * Determines whether the given data is predominantly text-based.
+     * It analyzes the byte content and calculates the ratio of textual characters.
+     * If more than 90% of the data consists of text-compatible characters, it returns true.
+     *
+     * @param {Uint8Array} data - The byte array to analyze for text content.
+     * @return {boolean} Returns true if the data is predominantly text-based; otherwise, false.
+     */
+    private static isTextData(data: Uint8Array): boolean {
+        if (data.length === 0) return false;
+
+        let textChars = 0;
+
+        for (const b of data) {
+            if (
+                (b >= 0x20 && b <= 0x7e) || // printable ASCII
+                b === 0x0a || b === 0x0d || b === 0x09 || // \n \r \t
+                b >= 0x80 // UTF-8 continuation or multibyte
+            ) {
+                textChars++;
+            }
+        }
+
+        return textChars / data.length > 0.9;
+    }
+
 }
 
 new Wizard();
