@@ -1045,15 +1045,15 @@ class Wizard {
     private async saveXSFP() {
         // Start Reading of Module.
         return await this.startReadingProcess().then(async (r) => {
-            // Show Read Notification.
-            Notify.info(i18next.t("common:module-read"));
-
             const data = (r as any).body;
 
             if (data.size == undefined || data.chunk == undefined) {
-                Notify.failure(i18next.t("common:module-error"));
+                Notify.warning(i18next.t("common:module-error"));
 
                 throw new Error("size or chunk required");
+            } else {
+                // Show Read Notification.
+                Notify.info(i18next.t("common:module-read"));
             }
 
             // Print Debug Message.
