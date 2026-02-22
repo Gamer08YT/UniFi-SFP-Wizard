@@ -6,7 +6,8 @@ import {GATTUUID} from "./GATTUUID";
 import {APIRequest} from "./APIRequest";
 import {Confirm, Loading, Notify} from "notiflix";
 import {deflate, inflate} from "pako";
-import {Type} from "./Type";
+import {ProtocolType} from "./ProtocolType";
+import {FormatType} from "./FormatType";
 
 class Wizard {
     // Normaly it's UACC-SFP-Wizard don't know why Edge display it as Sfp Wizard.
@@ -761,8 +762,8 @@ class Wizard {
         // Header section (9 bytes + compressed header)
         const headerSection = new Uint8Array(9 + compressedHeader.length);
 
-        headerSection[0] = 0x03;
-        headerSection[1] = 0x01;
+        headerSection[0] = FormatType.json;
+        headerSection[1] = ProtocolType.TypeHeader;
         headerSection[2] = 0x01;
         headerSection[3] = 0x01;
         headerSection[4] = 0x00;
@@ -775,8 +776,8 @@ class Wizard {
         // Body section (8 bytes + compressed body)
         const bodySection = new Uint8Array(8 + compressedBody.length);
 
-        bodySection[0] = 0x02;
-        bodySection[1] = 0x01;
+        bodySection[0] = ProtocolType.TypeHeader;
+        bodySection[1] = FormatType.json;
         bodySection[2] = 0x01;
         bodySection[3] = 0x00;
         bodySection[4] = (compressedBody.length >>> 24) & 0xff;
@@ -802,6 +803,68 @@ class Wizard {
 
 
     /**
+     * Encodes the given JSON data and binary body data into a transportable Uint8Array format.
+     *
+     * @param {Uint8Array} jsonData The JSON data to be compressed and included in the header section.
+     * @param {Uint8Array} bodyData The binary data to be included in the body section.
+     * @param {number} seqNum The sequence number to include in the transport header.
+     * @return {Uint8Array} The encoded data, which includes the transport header, header section, and body section.
+     */
+    private static binmeEncodeRawBody(
+        jsonData: Uint8Array,
+        bodyData: Uint8Array,
+        seqNum: number
+    ): Uint8Array {
+
+        // Deflate JSON Data from Header.
+        const compressedHeader = deflate(jsonData);
+
+        // Build Header section (9 + compressedHeader.length) ---
+        const headerSection = new Uint8Array(9 + compressedHeader.length);
+        headerSection[0] = ProtocolType.TypeHeader; // 0x03
+        headerSection[1] = FormatType.json;       // 0x01
+        headerSection[2] = 0x01;             // compressed = true
+        headerSection[3] = 0x01;             // flags
+        headerSection[4] = 0x00;             // reserved
+        headerSection[5] = 0x00;
+        headerSection[6] = 0x00;
+        headerSection[7] = 0x00;
+        headerSection[8] = compressedHeader.length & 0xff; // 1‑Byte length
+        headerSection.set(compressedHeader, 9);
+
+        // Build Body section (8 + bodyData.length) ---
+        const bodySection = new Uint8Array(8 + bodyData.length);
+        bodySection[0] = ProtocolType.TypeBody; // 0x02
+        bodySection[1] = FormatType.binary;   // 0x03
+        bodySection[2] = 0x00;           // not compressed
+        bodySection[3] = 0x00;           // reserved
+
+        // 32‑bit Big‑Endian length
+        const dv = new DataView(bodySection.buffer);
+        dv.setUint32(4, bodyData.length, false); // false = BigEndian
+
+        bodySection.set(bodyData, 8);
+
+        // Calculate total length
+        const totalLen = headerSection.length + bodySection.length;
+
+        // Define Transport Header
+        const transportHeader = new Uint8Array(4);
+        const dv2 = new DataView(transportHeader.buffer);
+        dv2.setUint16(0, totalLen + 4, false); // BigEndian
+        dv2.setUint16(2, seqNum, false);
+
+        // Combine header, body, and transport header into one Uint8Array
+        const out = new Uint8Array(transportHeader.length + totalLen);
+        out.set(transportHeader, 0);
+        out.set(headerSection, 4);
+        out.set(bodySection, 4 + headerSection.length);
+
+        return out;
+    }
+
+
+    /**
      * Decodes a binary-encoded data structure with a specific format containing headers and body sections.
      *
      * The method extracts and decodes both the header and body sections, supporting optional compression on both.
@@ -811,14 +874,15 @@ class Wizard {
      * @return {{header: object, body: object}} An object containing the decoded header and body as parsed JSON objects.
      * @throws {Error} If the header or body type is invalid.
      */
-    private static binmeDecode(data: Uint8Array): { header: object; body: any; type: Type } {
+    private static binmeDecode(data: Uint8Array): { header: object; body: object; } {
         let pos = 4; // skip transport header
-        let type = Type.json;
-        let header = null;
-        let body = null;
 
         // HEADER
         const headerType = data[pos];
+
+        // Throw error if header type is not 0x03
+        if (headerType !== ProtocolType.TypeHeader) throw new Error(`Expected header type ${ProtocolType.TypeHeader}, got ${headerType} instead`);
+
         const headerCompressed = data[pos + 2] === 1;
         const headerLen = data[pos + 8];
         pos += 9;
@@ -836,8 +900,14 @@ class Wizard {
             }
         }
 
+        const header = JSON.parse(new TextDecoder().decode(headerJsonRaw));
+
         // BODY
         const bodyType = data[pos];
+
+        // Throw error if body type is not 0x02
+        if (bodyType !== ProtocolType.TypeBody) throw new Error(`Expected body type ${ProtocolType.TypeBody}, got ${bodyType} instead`);
+
         const bodyCompressed = data[pos + 2] === 1;
         const bodyLen =
             (data[pos + 4] << 24) |
@@ -859,30 +929,9 @@ class Wizard {
             }
         }
 
+        const body = JSON.parse(new TextDecoder().decode(bodyJsonRaw));
 
-        // Try to parse Body first.
-        try {
-            header = JSON.parse(new TextDecoder().decode(headerJsonRaw));
-            body = JSON.parse(new TextDecoder().decode(bodyJsonRaw));
-        } catch (e) {
-            // Try to parse as Text next.
-            if (Wizard.isTextData(body)) {
-                console.log(`Received Text Data: ${new TextDecoder().decode(bodyJsonRaw)}`);
-
-                header = new TextDecoder().decode(headerJsonRaw);
-                body = new TextDecoder().decode(bodyJsonRaw);
-                type = Type.text;
-            } else {
-                // Parse as Binary next.
-                header = bodyJsonRaw;
-                body = bodyJsonRaw;
-
-                type = Type.hex;
-            }
-        }
-
-
-        return {header, body, type};
+        return {header, body};
     }
 
 
