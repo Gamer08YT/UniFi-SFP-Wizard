@@ -33,5 +33,7 @@
   "mac-failed": "Unable to retrieve MAC Address, please try again.",
   "api-new": "New API",
   "api-legacy": "Legacy API",
-  "autoscroll": "Autoscroll the Log"
+  "autoscroll": "Autoscroll the Log",
+  "reboot-success": "Device will be rebooted in a few seconds...",
+  "reboot-failed": "Device reboot failed."
 }

@@ -237,7 +237,15 @@ class Wizard {
         // Register Reboot Control Button.
         Wizard.rebootButton.on("click", () => {
             Confirm.show(i18next.t("common:reboot-title"), i18next.t("common:reboot-message"), i18next.t("common:yes"), i18next.t("common:no"), () => {
-                Wizard.reboot().then(r => console.debug(r));
+                Wizard.reboot().then(r => {
+                    const data = (r as any).header;
+
+                    if (data.statusCode == 200) {
+                        Notify.success(i18next.t("common:reboot-success"));
+                    } else {
+                        Notify.failure(i18next.t("common:reboot-failed"));
+                    }
+                });
             });
         });
 
