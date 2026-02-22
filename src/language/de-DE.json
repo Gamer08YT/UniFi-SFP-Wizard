@@ -43,5 +43,9 @@
   "name-unchanged": "Der Gerätename wurde nicht geändert, da er mit dem aktuellen Namen identisch ist.",
   "name-failed": "Ändern des Gerätenamens fehlgeschlagen.",
   "default-name": "SFP Wizard",
-  "battery": "Batterie"
+  "battery": "Batterie",
+  "no-eeprom-selected": "Es wurde kein EEPROM Dump zum flashen ausgewählt.",
+  "eeprom-dump-send": "EEPROM Dump wurde erfolgreich auf das Gerät übertragen, bitte auf \"Write\" drücken um das Modul zu flashen.",
+  "eeprom-sync-error": "Beim Synchronisieren des EEPROM Dumps ist ein Fehler aufgetreten."
+
 }

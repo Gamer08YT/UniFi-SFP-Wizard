@@ -280,6 +280,18 @@ class Wizard {
             this.saveXSFP();
         });
 
+        // Register Write Control Button.
+        Wizard.writeButton.on("click", () => {
+            if (this.checkEEPROMSelection()) {
+                this.writeXSFP().then(r => {
+                    Notify.success(i18next.t("common:eeprom-dump-send"));
+                });
+            } else {
+                // Notify for wrong EEPROM Selection.
+                Notify.failure(i18next.t("common:no-eeprom-selected"));
+            }
+        });
+
         // Register Name Control Button.
         Wizard.nameButton.on("click", () => {
             Confirm.prompt(i18next.t("common:name-title"), i18next.t("common:name-message"), i18next.t("common:default-name"), i18next.t("common:yes"), i18next.t("common:no"), (data: string) => {
@@ -1288,6 +1300,29 @@ class Wizard {
         });
     }
 
+    private async writeXSFP() {
+        return await this.cancelSync().then(async (r) => {
+            const size = 512;
+            const eeprom = new Uint8Array(size);
+
+            // Request new Snapshot Transmission.
+            Wizard.sendApiRequest("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/start`, {size: size}).then(async (r) => {
+                const data = (r as any).header;
+
+                // Check if Snapshot is Ready to be sent.
+                if(data.statusCode == 200) {
+                    // Send Snapshot.
+                    Wizard.sendApiRequestRaw("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/sync/data`, eeprom).then(async (r) => {
+                        const data = (r as any).header;
+                    })
+                } else {
+                    // Notify Error.
+                    Notify.failure(i18next.t("common:eeprom-sync-error"));
+                }
+            });
+        });
+    }
+
     /**
      * Initiates the process of reading data from a module and saving it.
      *
@@ -1547,6 +1582,33 @@ class Wizard {
      */
     private async changeName(data: string): Promise<any> {
         return await Wizard.sendApiRequest("POST", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/name`, {name: data});
+    }
+
+
+    /**
+     * Checks whether an EEPROM file has been selected for upload in the wizard.
+     *
+     * @return {boolean} Returns true if an EEPROM file is selected; otherwise, false.
+     */
+    private checkEEPROMSelection() {
+        // @ts-ignore
+        return Wizard.isFileSelected(Wizard.eepromUpload);
+    }
+
+    /**
+     * Checks if a file is selected in the provided input element.
+     *
+     * @return A boolean value, true if a file is selected, false otherwise.
+     * @param input
+     */
+    private static isFileSelected(input: JQuery<HTMLInputElement>): boolean {
+        const el: HTMLInputElement = input[0];
+
+        return !!(el && el.files && el.files.length > 0);
+    }
+
+    private static sendApiRequestRaw(post: string, s: string, eeprom: Uint8Array<ArrayBuffer>) {
+        
     }
 }
 

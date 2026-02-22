@@ -8,6 +8,9 @@ Feel free to contribute to this project.
 
 ![Dashboard](/assets/img/dashboard.png)
 
+## Live Demo
+https://gamer08yt.github.io/UniFi-SFP-Wizard/
+
 ## Features
 
 - Device Functions
