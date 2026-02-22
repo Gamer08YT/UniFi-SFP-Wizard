@@ -86,6 +86,33 @@ The tool connects to your SFP Wizard using the Web Bluetooth API. ">
                         <br>
                         <div class="card">
                             <div class="card-body">
+                                <!-- Start: SFP Flash -->
+                                <div id="sfp-flash">
+                                    <h5 class="card-title">Module Flash</h5>
+                                    <!-- Start: EEPROM Config Upload -->
+                                    <div class="mb-3">
+                                        <label for="sfp-file" class="form-label">EEPROM Configuration</label>
+                                        <input class="form-control" disabled type="file" accept=".uieeprom"
+                                               id="sfp-file">
+                                    </div>
+                                    <!-- End: EEPROM Config Upload -->
+
+                                    <!-- Start: Repo EEPROM Config Select -->
+                                    <div class="mb-3">
+                                        <label for="sfp-repo" class="form-label">EEPROM Repository</label>
+                                        <select class="form-select" id="sfp-repo" aria-label="Default select example">
+                                            <option selected>Select EEPROM Config</option>
+                                            <option value="1">Todo</option>
+                                        </select>
+                                    </div>
+                                    <!-- End: Repo EEPROM Config Select -->
+                                </div>
+                                <!-- End: SFP Flash -->
+                            </div>
+                        </div>
+                        <br>
+                        <div class="card">
+                            <div class="card-body">
                                 <!-- Start: SFP Module -->
                                 <div id="wizard-module">
                                     <h5 class="card-title">Module Meta</h5>
