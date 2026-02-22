@@ -592,6 +592,13 @@ class Wizard {
 
             console.log(`Info Data: ${this.decodeJSON(buf)}`);
 
+            try {
+                // Set Log Message.
+                this.setLog(this.decodeJSON(buf));
+            } catch (e) {
+                // Do nothing.
+            }
+
             // Resolve Pending Resolver.
             if (Wizard.pendingResolver) {
                 Wizard.pendingResolver(buf);
@@ -627,6 +634,14 @@ class Wizard {
                 const resolver = Wizard.apiResolvers.get(id)!;
 
                 Wizard.apiResolvers.delete(id);
+
+                try {
+                    // Set Log Message.
+                    this.setLog(JSON.stringify(decoded));
+                } catch (e) {
+                    // Do nothing.
+                }
+
 
                 resolver(decoded);
             }
@@ -1090,6 +1105,29 @@ class Wizard {
     private static wrongBrowserBLESupport(): void {
         Notify.failure(i18next.t("common:browser-ble-support"));
     }
+
+    /**
+     * Appends the provided string as a formatted code block to the log container.
+     *
+     * @param {string} s - The string to be logged in the log container.
+     * @return {void} This method does not return a value.
+     */
+    private static setLog(s: string) {
+        $("#log-container").append(`<div class="log"><a>${this.formatTimeHHMMSS()} - </a><code>${s}</code></div>`);
+    }
+
+    /**
+     * Formats a given Date object into a time string in the format HH:mm:ss.
+     * If no date is provided, the current date and time are used.
+     */
+    private static formatTimeHHMMSS(date = new Date()) {
+        const pad2 = (n: any) => String(n).padStart(2, "0");
+        const HH = pad2(date.getHours());
+        const mm = pad2(date.getMinutes());
+        const ss = pad2(date.getSeconds());
+        return `${HH}:${mm}:${ss}`;
+    }
+
 }
 
 new Wizard();

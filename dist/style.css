@@ -5,3 +5,16 @@ body {
 .card-body p {
     line-height: 0.5rem;
 }
+
+.log {
+    background-color: rgb(19, 20, 22);
+    border-radius: 0.45rem;
+    border-color: rgba(255, 255, 255, 0.15);
+    border-width: 2px;
+    border-style: solid;
+}
+
+#log-container {
+    overflow-y: scroll;
+    max-height: 10rem;
+}
