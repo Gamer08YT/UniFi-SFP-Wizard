@@ -989,6 +989,7 @@ class Wizard {
             const data = (r as any).body;
             const header = (r as any).header;
 
+            // Check if API Response contains Status Code.
             if (header.statusCode !== undefined && header.statusCode == 200) {
                 /**
                  * {
