@@ -800,6 +800,19 @@ class Wizard {
         return out;
     }
 
+    /**
+     * Extracts the prefix of the provided Uint8Array data that forms a valid JSON object.
+     *
+     * @param {Uint8Array} data - The input data to search for*/
+    private static extractJsonPrefix(data: Uint8Array): Uint8Array {
+        const text = new TextDecoder().decode(data);
+
+        const end = text.lastIndexOf("}");
+        if (end === -1) throw new Error("No JSON object found");
+
+        return data.slice(0, end + 1);
+    }
+
 
     /**
      * Decodes a binary-encoded data structure with a specific format containing headers and body sections.
@@ -813,40 +826,33 @@ class Wizard {
      */
     private static binmeDecode(data: Uint8Array): { header: object; body: any; type: "json" | "text" | "hex" } {
         const frames = Wizard.parseFrames(data);
-
-        if (frames.length === 0) {
-            throw new Error("No frames found");
-        }
+        if (frames.length === 0) throw new Error("No frames found");
 
         const frame = frames[0];
         const raw = frame.decompressed ?? frame.payload;
 
-        // 1. Try JSON
+        // 1. Try JSON prefix extraction
         try {
-            const json = JSON.parse(new TextDecoder().decode(raw));
+            const jsonRaw = Wizard.extractJsonPrefix(raw);
+            const remainder = raw.slice(jsonRaw.length);
 
-            // @ts-ignore
-            return {header: frame, body: json, type: "json"};
-        } catch (e) {
-            console.warn("Failed to parse JSON:", e);
+            const json = JSON.parse(new TextDecoder().decode(remainder));
+
+            return {
+                header: frame,
+                body: json,
+                type: "json"
+            };
+        } catch (_) {
+            // 2. Try text
+            if (Wizard.isTextData(raw)) {
+                return {header: frame, body: new TextDecoder().decode(raw), type: "text"};
+            }
+
+            // 3. Fallback: hex dump
+            const hex = [...raw].map(b => b.toString(16).padStart(2, "0")).join(" ");
+            return {header: frame, body: hex, type: "hex"};
         }
-
-        // 2. Try text
-        if (Wizard.isTextData(raw)) {
-            // @ts-ignore
-            return {header: frame, body: new TextDecoder().decode(raw), type: "text"};
-        }
-
-        // 3. Fallback: hex dump
-        const hexLines: string[] = [];
-        for (let i = 0; i < raw.length; i += 16) {
-            const chunk = raw.slice(i, i + 16);
-            const hex = Array.from(chunk).map(b => b.toString(16).padStart(2, "0")).join(" ");
-            hexLines.push(i.toString(16).padStart(4, "0") + ": " + hex);
-        }
-
-        // @ts-ignore
-        return {header: frame, body: hexLines.join("\n"), type: "hex"};
     }
 
 
