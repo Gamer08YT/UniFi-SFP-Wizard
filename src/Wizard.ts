@@ -1,6 +1,7 @@
 import $, {error} from "jquery";
 import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
+import * as deCommon from "./language/de-DE.json";
 import {GATTUUID} from "./GATTUUID";
 import {APIRequest} from "./APIRequest";
 import {Confirm, Loading, Notify} from "notiflix";
@@ -264,6 +265,9 @@ class Wizard {
             resources: {
                 "en-US": {
                     common: enCommon,
+                },
+                "de": {
+                    common: deCommon
                 }
             }
         });
@@ -982,7 +986,11 @@ class Wizard {
     }
 
     /**
+     * Fetches and processes XSFP module details from the API and updates the module data.
+     * Makes an asynchronous API request to retrieve module details and updates the corresponding fields in the Wizard.
+     * Displays a success notification if the request is successful or a warning if it fails.
      *
+     * @return {Promise<void>} A promise that resolves when the XSFP details are successfully retrieved and processed.
      */
     private async readXSFP() {
         await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/details`).then((r) => {
