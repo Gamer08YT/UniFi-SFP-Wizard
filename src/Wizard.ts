@@ -45,6 +45,9 @@ class Wizard {
         // Retrieve Elements.
         this.prepareDOM();
 
+        // Replace Text Elements.
+        this.replaceLocale();
+
         // Prepare Listeners.
         this.registerListeners();
     }
@@ -272,15 +275,6 @@ class Wizard {
             }
         });
 
-        // Set Page Texts.
-        this.setPage("info", i18next.t("common:info"));
-        this.setPage("affiliate", i18next.t("common:affiliate"));
-        this.setPage("firmware", i18next.t("common:firmware"));
-        this.setPage("name", i18next.t("common:name"));
-        this.setPage("serial", i18next.t("common:serial"));
-
-        // Clear Fields.
-        Wizard.clearFields();
     }
 
     /**
@@ -1128,6 +1122,34 @@ class Wizard {
         return `${HH}:${mm}:${ss}`;
     }
 
+    /**
+     * Updates the application locale by setting page texts and button labels to the translations
+     * of the currently selected language. It also clears the input fields on the interface.
+     *
+     * @return {void} Does not return any value.
+     */
+    private replaceLocale(): void {
+        console.log(`Locale set to ${i18next.language}`);
+
+        // Set Page Texts.
+        this.setPage("info", i18next.t("common:info"));
+        this.setPage("affiliate", i18next.t("common:affiliate"));
+        this.setPage("firmware", i18next.t("common:firmware"));
+        this.setPage("name", i18next.t("common:name"));
+        this.setPage("serial", i18next.t("common:serial"));
+
+        // Replace the default button text with localized versions.
+        Wizard.connectButton.text(i18next.t("common:connect"));
+        Wizard.poweroffButton.text(i18next.t("common:shutdown"));
+        Wizard.chargeControlButton.text(i18next.t("common:charge"));
+        Wizard.rebootButton.text(i18next.t("common:reboot"));
+        Wizard.readButton.text(i18next.t("common:read"));
+        Wizard.saveButton.text(i18next.t("common:save"));
+        Wizard.writeButton.text(i18next.t("common:write"));
+
+        // Clear Fields.
+        Wizard.clearFields();
+    }
 }
 
 new Wizard();
