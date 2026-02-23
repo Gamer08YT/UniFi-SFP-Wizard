@@ -28,6 +28,7 @@ class Wizard {
     private static autoscrollSwitch: JQuery<HTMLElement>;
     private static nameButton: JQuery<HTMLElement>;
     private static repoSelect: JQuery<HTMLElement>;
+    private static logButton: JQuery<HTMLElement>;
 
     // Store GATT Characteristic Instances.
     private static infoChar: BluetoothRemoteGATTCharacteristic;
@@ -325,6 +326,11 @@ class Wizard {
                 });
             });
         });
+
+        // Register Log Button.
+        Wizard.logButton.on("click", () => {
+            this.retrieveLogs();
+        });
     }
 
     /**
@@ -389,6 +395,7 @@ class Wizard {
         Wizard.eepromUpload = $("#sfp-file");
         Wizard.repoSelect = $("#sfp-repo");
         Wizard.nameButton = $("#name-wizard");
+        Wizard.logButton = $("#log-wizard");
     }
 
     /**
@@ -1745,6 +1752,31 @@ class Wizard {
         if (!file) return null;
 
         return new Uint8Array(await file.arrayBuffer());
+    }
+
+    private retrieveLogs() {
+        Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/sif/start`).then((r) => {
+            const header = (r as any).header;
+
+            if (header != undefined && header.statusCode == 200) {
+                /**
+                 * {
+                 *     "status": "start",
+                 *     "offset": 0,
+                 *     "chunk": 4096,
+                 *     "size": 16384
+                 * }
+                 */
+                // Print Debug Message.
+                console.log(`Received size: ${header.size} and chunk: ${header.chunk}.`);
+
+                // Start Data Chunk Stream.
+                Wizard.sendApiRequest("")
+            } else {
+                // Notify Error.
+                Notify.failure(i18next.t("common:sif-error-start"));
+            }
+        });
     }
 }
 
