@@ -9,22 +9,23 @@ Feel free to contribute to this project.
 ![Dashboard](/assets/img/dashboard.png)
 
 ## Live Demo
+
 https://gamer08yt.github.io/UniFi-SFP-Wizard/
 
 ## Features
 
 - Device Functions
-  - Reboot
-  - Shutdown
-  - Rename
-  - Battery Control
-  - Device Info
+    - Reboot
+    - Shutdown
+    - Rename
+    - Battery Control
+    - Device Info
 - SFP Functions
-  - Read EEPROM
-  - Write EEPROM [X]
-    - Via File Upload
-    - Via Repo
-  - Save EEPROM
+    - Read EEPROM
+    - Write EEPROM [X]
+        - Via File Upload
+        - Via Repo
+    - Save EEPROM
 
 ## Contributing
 
@@ -34,9 +35,26 @@ Feel free to contribute, every help is appreciated!
 
 If you want to contribute a EEPROM profile, please create a pull request.
 
-Please upload your EEPROM Dump into the <code>repository</code> Folder and add an entry to the <code>dumps.json</code> File.
+Please upload your EEPROM Dump into the <code>repository</code> Folder and add an entry to the <code>dumps.json</code>
+File.
 
 ## Known Issues
+
+### Module can't be read
+
+If you power on the Wizard with an Module in it's SFP Slot, the Module can't be read.
+
+Please remove the Module from the Slot and plug it in again.
+
+Now you can read the Module.
+
+### Random Reboots
+
+I don't know why, but sometimes the Wizard reboots.
+
+The Problem is not my WebGUI, because the Wizard sometimes reboots also with the IOS App.
+
+Currently, I am unable to access the JTAG Console, so i can't debug the Problem (And yes the ESP32 uses Secure Boot).
 
 ### Bluetooth Limitations
 
@@ -48,9 +66,17 @@ I use a dirty workaround to get the MAC, because in the API V1 the MAC is availa
 
 So I use the <code>getVer</code> Command to get the MAC after a successful connection.
 
-### Dump not writing
+### Can't flash Module
 
-Please have a look at https://github.com/vitaminmoo/sfpw-tool/blob/main/doc/HOW_TO_DOWNGRADE_AND_WHY_NOT_TO.md wich explains why some modules are not working.
+In the newer Versions of the SFP-Wizard Firmware, the Wizard checks if the Module is in its Database.
+
+If the Part Number is not in the Database, the Wizard can't flash the Module.
+
+Version 1.0.5 allowed flashing of Modules without a Database, but it has no check if the Module Password was correct, so
+you could destroy your Module.
+
+Please have a look at https://github.com/vitaminmoo/sfpw-tool/blob/main/doc/HOW_TO_DOWNGRADE_AND_WHY_NOT_TO.md wich
+explains why some modules are not working.
 
 ## Credits
 
