@@ -40,6 +40,16 @@ File.
 
 ## Known Issues
 
+### Modules are not flashed via WebGUI
+
+That's correct, the current API does not allow flashing of Modules via WebGUI directly.
+
+It only allows transmitting the EEPROM Dump into the Wizards Snapshot Buffer.
+
+So if you press the "Write" Button, you need to confirm the flash process on the Wizard.
+
+I created a [Thread Message](https://community.ui.com/releases/4e7ed4c2-3060-4ea8-8416-f6d502ac2dcc?replyId=3b9a0d99-b0fd-4aaf-b007-838a572a0b38) in the Ubiquiti Community, but i think they won't add a function for that so fast.
+
 ### Module can't be read
 
 If you power on the Wizard with an Module in it's SFP Slot, the Module can't be read.
@@ -66,7 +76,7 @@ I use a dirty workaround to get the MAC, because in the API V1 the MAC is availa
 
 So I use the <code>getVer</code> Command to get the MAC after a successful connection.
 
-### Can't flash Module
+### Can't flash some Modules
 
 In the newer Versions of the SFP-Wizard Firmware, the Wizard checks if the Module is in its Database.
 
