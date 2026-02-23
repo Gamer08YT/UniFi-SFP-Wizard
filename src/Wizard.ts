@@ -1768,7 +1768,7 @@ class Wizard {
      *
      * @return {void} This method does not return a value. It performs asynchronous operations to retrieve and handle logs.
      */
-    private retrieveLogs() {
+    private retrieveLogs(): void {
         Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/sif/start`).then(async (r) => {
             const header = (r as any).header;
 
