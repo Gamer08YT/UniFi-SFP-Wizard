@@ -1830,10 +1830,13 @@ class Wizard {
 
                 // Unarchive Text.
                 // @ts-ignore
-                console.warn(Wizard.extractSyslog(binary).then(s => {
+                Wizard.extractSyslog(binary).then(s => {
                     // Download Log File.
                     this.downloadStream({body: s}, "text/plain", "sif.log");
-                }));
+
+                    // Notify Success.
+                    Notify.success(i18next.t("common:sif-finish"));
+                });
 
             } else {
                 // Notify Error.

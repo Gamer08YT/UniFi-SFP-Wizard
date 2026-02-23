@@ -51,5 +51,6 @@
   "eeprom-sync-nomodule": "To transmit an EEPROM Dump, an fibre module must be connected to the device.",
   "sif-error-start": "Unable to request the serial interface, please try again.",
   "sif-error": "Unable to read the serial interface.",
-  "sif-start": "Log file was created and will be downloaded now from the Wizard."
+  "sif-start": "Log file was created and will be downloaded now from the Wizard.",
+  "sif-finish": "Log file was successfully downloaded."
 }

@@ -51,5 +51,6 @@
   "eeprom-sync-nomodule": "Um ein EEPROM Dump zu übertragen, muss ein Fasermodul eingesteckt werden.",
   "sif-error-start": "Das Serial Interface konnte nicht angefordert werden. Bitte versuchen Sie es erneut.",
   "sif-error": "Das Serial Interface konnte nicht gelesen werden.",
-  "sif-start": "Logdatei wurde erstellt und wird nun vom Wizard runtergeladen."
+  "sif-start": "Logdatei wurde erstellt und wird nun vom Wizard runtergeladen.",
+  "sif-finish": "Logdatei wurde erfolgreich heruntergeladen."
 }
