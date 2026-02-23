@@ -20,6 +20,7 @@ https://gamer08yt.github.io/UniFi-SFP-Wizard/
     - Rename
     - Battery Control
     - Device Info
+    - Download Syslog
 - SFP Functions
     - Read EEPROM
     - Write EEPROM [X]
