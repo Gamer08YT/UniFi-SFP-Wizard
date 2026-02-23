@@ -38,6 +38,8 @@ Please upload your EEPROM Dump into the <code>repository</code> Folder and add a
 
 ## Known Issues
 
+### Bluetooth Limitations
+
 Due to limitations of the Web Bluetooth API, i can't read the MAC from the Device on first connect.
 
 Normally the Service 1 Channel should contain the MAC on first connecting but it dont.
@@ -45,6 +47,10 @@ Normally the Service 1 Channel should contain the MAC on first connecting but it
 I use a dirty workaround to get the MAC, because in the API V1 the MAC is available in any Basic Response.
 
 So I use the <code>getVer</code> Command to get the MAC after a successful connection.
+
+### Dump not writing
+
+Please have a look at https://github.com/vitaminmoo/sfpw-tool/blob/main/doc/HOW_TO_DOWNGRADE_AND_WHY_NOT_TO.md wich explains why some modules are not working.
 
 ## Credits
 
