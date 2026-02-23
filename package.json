@@ -12,11 +12,13 @@
     "@types/web-bluetooth": "^0.0.21",
     "i18next": "^25.7.3",
     "jquery": "^3.7.1",
+    "js-untar": "^2.0.0",
     "notiflix": "^3.2.8",
     "pako": "^2.1.0"
   },
   "devDependencies": {
     "@types/jquery": "^3.5.33",
+    "@types/js-untar": "^2.0.0",
     "@types/pako": "^2.0.4",
     "ts-loader": "^9.5.4",
     "typescript": "^5.5.3",

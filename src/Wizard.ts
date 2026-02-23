@@ -9,6 +9,7 @@ import {deflate, inflate} from "pako";
 import {ProtocolType} from "./ProtocolType";
 import {FormatType} from "./FormatType";
 import {Repository} from "./Repository";
+import untar from "js-untar";
 
 class Wizard {
     // Normaly it's UACC-SFP-Wizard don't know why Edge display it as Sfp Wizard.
@@ -1545,10 +1546,12 @@ class Wizard {
      * Downloads a binary data stream as a file.
      *
      * @param {Object} r - The response object containing the binary stream data.
+     * @param type
+     * @param filename
      * @param {any} r.body - The binary data to be downloaded.
      * @return {void} This method does not return a value, it triggers a file download.
      */
-    private downloadStream(r: any) {
+    private downloadStream(r: any, type: string = "octet/stream", filename: string | null = null) {
         // Create a Blob from the binary data.
         const blob = new Blob([r.body], {type: "octet/stream"});
 
@@ -1561,11 +1564,15 @@ class Wizard {
         // Set the download attribute of the link from Blob.
         triggerDownload.href = tmpUrl;
 
-        // Parse Meta from Binary.
-        const meta = Wizard.fetchEEPROM(r.body)
+        if (filename === null) {
+            // Parse Meta from Binary.
+            const meta = Wizard.fetchEEPROM(r.body)
 
-        // Set the file name of the download link.
-        triggerDownload.download = meta.vendor + "-" + meta.part + ".uieeprom";
+            // Set the file name of the download link.
+            triggerDownload.download = meta.vendor + "-" + meta.part + ".uieeprom";
+        } else {
+            triggerDownload.download = filename;
+        }
 
         // Append to Body.
         document.body.appendChild(triggerDownload);
@@ -1777,7 +1784,17 @@ class Wizard {
                     offset: body.offset,
                     chunk: body.chunk
                 }).then((data) => {
-                    console.warn(data);
+                    // @ts-ignore
+                    if (data.type == FormatType.binary && data.body != undefined) {
+                        // @ts-ignore
+                        console.warn(Wizard.extractSyslog(data.body).then(s => {
+                            // Download Log File.
+                            this.downloadStream({body: s}, "text/plain", "sif.log");
+                        }));
+                    } else {
+                        // @ts-ignore
+                        console.error(`Invalid response from wizard. ${data.type} ${data.body}`);
+                    }
                 });
             } else {
                 // Notify Error.
@@ -1785,6 +1802,28 @@ class Wizard {
             }
         });
     }
+
+
+    /**
+     * Extracts the content of the "syslog" file from a given tar archive.
+     *
+     * @param {Uint8Array} archive - The tar archive as a Uint8Array.
+     * @return {Promise<string|null>} A promise that resolves to the contents of the "syslog" file as a string if found, or null if not found.
+     */
+    private static async extractSyslog(archive: Uint8Array): Promise<string | null> {
+        // @ts-ignore
+        const files = await untar(archive.buffer);
+
+        for (const file of files) {
+            if (file.name === "syslog") {
+                return new TextDecoder().decode(file.buffer);
+            }
+        }
+
+        return null;
+    }
+
+
 }
 
 new Wizard();
