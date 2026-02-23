@@ -1773,6 +1773,9 @@ class Wizard {
             const header = (r as any).header;
 
             if (header != undefined && header.statusCode == 200) {
+                // Notify Info.
+                Notify.info(i18next.t("common:sif-start"));
+
                 const body = (r as any).body;
                 /**
                  * {
@@ -1795,24 +1798,26 @@ class Wizard {
                 while (offset < body.size) {
                     let remaining = body.size - offset
 
-                    // Check for the remaining chunk.
-                    if (remaining < body.chunk) {
-                        body.chunk = remaining
-                    }
+                    // Return the smallest number as chunk.
+                    let chunk = Math.min(remaining, body.chunk);
 
                     // Start Data Chunk Stream.
                     await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/sif/data`, {
                         status: "continue",
                         offset: offset,
-                        chunk: body.chunk
+                        chunk: chunk
                     }).then((data) => {
                         // @ts-ignore
                         if (data.type == FormatType.binary && data.body != undefined) {
-                            console.log(`Received Chunk ${offset} of ${body.chunk}.`);
+                            console.log(`Received Data ${offset} of ${body.size}.`);
 
                             // Push Chunk into Buffer.
                             // @ts-ignore
                             tarChunks.push(data.body);
+
+                            // Increment Offset.
+                            // @ts-ignore
+                            offset += data.body.byteLength;
                         } else {
                             // @ts-ignore
                             console.error(`Invalid response from wizard. ${data.type} ${data.body}`);

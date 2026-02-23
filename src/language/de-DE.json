@@ -50,5 +50,6 @@
   "eeprom-file-error": "Falsches EEPROM Dump File, die Datei muss 512 (SFP) oder 640 (QSFP) Bytes lang sein.",
   "eeprom-sync-nomodule": "Um ein EEPROM Dump zu übertragen, muss ein Fasermodul eingesteckt werden.",
   "sif-error-start": "Das Serial Interface konnte nicht angefordert werden. Bitte versuchen Sie es erneut.",
-  "sif-error": "Das Serial Interface konnte nicht gelesen werden."
+  "sif-error": "Das Serial Interface konnte nicht gelesen werden.",
+  "sif-start": "Logdatei wurde erstellt und wird nun vom Wizard runtergeladen."
 }

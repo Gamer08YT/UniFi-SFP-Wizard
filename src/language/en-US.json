@@ -50,5 +50,6 @@
   "eeprom-file-error": "Incorrect EEPROM Dump file format, File should be 512 (SFP) or 640 (QSFP) Bytes long. ",
   "eeprom-sync-nomodule": "To transmit an EEPROM Dump, an fibre module must be connected to the device.",
   "sif-error-start": "Unable to request the serial interface, please try again.",
-  "sif-error": "Unable to read the serial interface."
+  "sif-error": "Unable to read the serial interface.",
+  "sif-start": "Log file was created and will be downloaded now from the Wizard."
 }
