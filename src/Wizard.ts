@@ -1761,8 +1761,15 @@ class Wizard {
         return new Uint8Array(await file.arrayBuffer());
     }
 
+    /**
+     * Retrieves logs from a remote API endpoint. The method initiates the log retrieval process, processes the response
+     * headers and body, and streams log data in chunks for further processing or downloading. In case of a failure, it
+     * handles the error response appropriately and provides debugging messages.
+     *
+     * @return {void} This method does not return a value. It performs asynchronous operations to retrieve and handle logs.
+     */
     private retrieveLogs() {
-        Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/sif/start`).then((r) => {
+        Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/sif/start`).then(async (r) => {
             const header = (r as any).header;
 
             if (header != undefined && header.statusCode == 200) {
@@ -1778,24 +1785,51 @@ class Wizard {
                 // Print Debug Message.
                 console.log(`Received size: ${header.size} and chunk: ${header.chunk}.`);
 
-                // Start Data Chunk Stream.
-                Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/sif/data`, {
-                    status: "continue",
-                    offset: body.offset,
-                    chunk: body.chunk
-                }).then((data) => {
-                    // @ts-ignore
-                    if (data.type == FormatType.binary && data.body != undefined) {
-                        // @ts-ignore
-                        console.warn(Wizard.extractSyslog(data.body).then(s => {
-                            // Download Log File.
-                            this.downloadStream({body: s}, "text/plain", "sif.log");
-                        }));
-                    } else {
-                        // @ts-ignore
-                        console.error(`Invalid response from wizard. ${data.type} ${data.body}`);
+                // Store offset.
+                let offset = 0;
+
+                // Store Tar Chunks.
+                let tarChunks: any[] = [];
+
+                // Loop until all data is retrieved.
+                while (offset < body.size) {
+                    let remaining = body.size - offset
+
+                    // Check for the remaining chunk.
+                    if (remaining < body.chunk) {
+                        body.chunk = remaining
                     }
-                });
+
+                    // Start Data Chunk Stream.
+                    await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/sif/data`, {
+                        status: "continue",
+                        offset: offset,
+                        chunk: body.chunk
+                    }).then((data) => {
+                        // @ts-ignore
+                        if (data.type == FormatType.binary && data.body != undefined) {
+                            console.log(`Received Chunk ${offset} of ${body.chunk}.`);
+
+                            // Push Chunk into Buffer.
+                            // @ts-ignore
+                            tarChunks.push(data.body);
+                        } else {
+                            // @ts-ignore
+                            console.error(`Invalid response from wizard. ${data.type} ${data.body}`);
+                        }
+                    });
+                }
+
+                // Combine Chunks.
+                const binary = this.combineChunks(tarChunks);
+
+                // Unarchive Text.
+                // @ts-ignore
+                console.warn(Wizard.extractSyslog(binary).then(s => {
+                    // Download Log File.
+                    this.downloadStream({body: s}, "text/plain", "sif.log");
+                }));
+
             } else {
                 // Notify Error.
                 Notify.failure(i18next.t("common:sif-error-start"));
@@ -1824,6 +1858,22 @@ class Wizard {
     }
 
 
+    /**
+     * Combines an array of chunks into a single Uint8Array.
+     * @param chunks
+     **/
+    private combineChunks(chunks: any) {
+        const total = chunks.reduce((s: any, c: any) => s + c.length, 0);
+        const out = new Uint8Array(total);
+
+        let offset = 0;
+        for (const c of chunks) {
+            out.set(c, offset);
+            offset += c.length;
+        }
+
+        return out;
+    }
 }
 
 new Wizard();
