@@ -1759,6 +1759,7 @@ class Wizard {
             const header = (r as any).header;
 
             if (header != undefined && header.statusCode == 200) {
+                const body = (r as any).body;
                 /**
                  * {
                  *     "status": "start",
@@ -1771,7 +1772,13 @@ class Wizard {
                 console.log(`Received size: ${header.size} and chunk: ${header.chunk}.`);
 
                 // Start Data Chunk Stream.
-                Wizard.sendApiRequest("")
+                Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/sif/data`, {
+                    status: "continue",
+                    offset: body.offset,
+                    chunk: body.chunk
+                }).then((data) => {
+                    console.warn(data);
+                });
             } else {
                 // Notify Error.
                 Notify.failure(i18next.t("common:sif-error-start"));
