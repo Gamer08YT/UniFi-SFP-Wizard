@@ -39,7 +39,7 @@ class Electron {
             event.preventDefault();
 
             // Send Device List to Frontend.
-            win.webContents.send("devices", devices);
+            this.windowInstance?.webContents.send("devices", devices);
 
             // Print Debug Message.
             console.log("Bluetooth device list dispatched.");

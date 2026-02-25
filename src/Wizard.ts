@@ -58,6 +58,9 @@ class Wizard {
         // Replace Text Elements.
         this.replaceLocale();
 
+        // Register Electron Bridge.
+        this.registerElectronBridge();
+
         // Prepare Listeners.
         this.registerListeners();
 
@@ -1881,6 +1884,29 @@ class Wizard {
         }
 
         return out;
+    }
+
+    /**
+     * Registers the Electron bridge to establish communication between the frontend and backend via the Electron API.
+     * Specifically, this method sets up an IPC handler for Bluetooth device-related events if the `electronAPI` object is present.
+     *
+     * @return {void} This method does not return a value.
+     */
+    private registerElectronBridge(): void {
+        console.log("Registering Electron Bridge if exists.");
+
+        // @ts-ignore
+        if (window.electronAPI !== undefined) {
+            console.log("Registering Electron IPC handler...");
+
+            // @ts-ignore
+            window.electronAPI?.handleBluetoothDevices((_evt: IpcRendererEvent, value: ElectronBluetoothDevice[]) => {
+                // Use the devices array to create the popup
+                console.log(value);
+            });
+        } else {
+            console.log("Electron API not found.");
+        }
     }
 }
 
