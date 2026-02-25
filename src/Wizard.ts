@@ -1946,16 +1946,24 @@ class Wizard {
         $("#electron-device-selector").children("option").each((id, element) => {
             if ($(element).attr("id") !== "select-dummy") {
                 // Remove Device if not in List.
-                value.find(v => v.deviceId === $(element).attr("value")) || $(element).remove() && console.log("Removing Device: ", $(element).attr("value"));
+                const deviceId = $(element).val(); // bei <option> besser als attr("value")
+
+                if (!value.some(v => v.deviceId === deviceId)) {
+                    $(element).remove();
+                    console.log("Removing Device:", deviceId);
+                }
             }
         });
 
         // Add new Devices.
         value.forEach(v => {
-            console.log(`New Device found: ${v.deviceName} (${v.deviceId})`);
+            // Remove unknown Devices.
+            if (!v.deviceName.includes("(" + v.deviceId + ")")) {
+                if ($("#electron-device-selector").children(`option[value="${v.deviceId}"]`).length === 0) {
+                    console.log(`New Device found: ${v.deviceName} (${v.deviceId})`);
 
-            if ($("#electron-device-selector").children(`option[value="${v.deviceId}"]`).length === 0) {
-                $("#electron-device-selector").append(`<option value="${v.deviceId}">${v.deviceName}</option>`);
+                    $("#electron-device-selector").append(`<option value="${v.deviceId}">${v.deviceName}</option>`);
+                }
             }
         });
     }
@@ -1981,7 +1989,8 @@ class Wizard {
                 // Print Debug Message.
                 console.log("Cancel Device Selection.");
             }, {
-                plainText: false
+                plainText: false,
+                messageMaxLength: 99999
             });
         }
     }
