@@ -1,11 +1,14 @@
 {
   "name": "UniFi-SFP-Wizard",
   "version": "1.0.0",
-  "description": "",
-  "main": "dist/index.js",
+  "description": "This tool allows you to program SFP modules via your browser.\nThe tool connects to your SFP Wizard using the Web Bluetooth API.",
+  "main": "app/Electron.js",
   "scripts": {
     "build": "webpack --mode production",
-    "serve": "webpack serve"
+    "serve": "webpack serve",
+    "make": "electron-forge make",
+    "prestart": "tsc ./app/Electron.ts --outDir ./app",
+    "start": "electron ."
   },
   "dependencies": {
     "@types/i18next": "^12.1.0",
@@ -24,7 +27,25 @@
     "typescript": "^5.5.3",
     "webpack": "^5.104.1",
     "webpack-cli": "^6.0.1",
-    "webpack-dev-server": "^5.2.2"
+    "webpack-dev-server": "^5.2.2",
+    "@electron-forge/cli": "^7.10.2",
+    "@electron-forge/maker-deb": "^7.10.2",
+    "@electron-forge/maker-dmg": "^7.10.2",
+    "@electron-forge/maker-msix": "^7.10.2",
+    "@electron-forge/publisher-github": "^7.10.2",
+    "electron": "^39.2.3",
+    "electron-builder": "^26.0.12",
+    "electron-windows-msix": "^2.0.4"
+  },
+  "build": {
+    "copyright": "Copyright © 2026 Jan Heil (www.byte-store.de)",
+    "files": [
+      "dist/**/*",
+      "build/*"
+    ],
+    "directories": {
+      "output": "packaged"
+    }
   },
   "private": true
 }
