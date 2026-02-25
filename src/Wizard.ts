@@ -1,4 +1,4 @@
-import $ from "jquery";
+import $, {data} from "jquery";
 import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
 import * as deCommon from "./language/de-DE.json";
@@ -10,6 +10,7 @@ import {ProtocolType} from "./ProtocolType";
 import {FormatType} from "./FormatType";
 import {Repository} from "./Repository";
 import untar from "js-untar";
+import * as bottleneck from "bottleneck";
 
 class Wizard {
     // Normaly it's UACC-SFP-Wizard don't know why Edge display it as Sfp Wizard.
@@ -1943,14 +1944,23 @@ class Wizard {
          * ]
          */
         // Remove old devices if not in the list.
+        // Currently the Electron Part does not recognize an disconnected device.
         $("#electron-device-selector").children("option").each((id, element) => {
-            if ($(element).attr("id") !== "select-dummy") {
+            if ($(element).val() !== "select-dummy") {
                 // Remove Device if not in List.
                 const deviceId = $(element).val(); // bei <option> besser als attr("value")
+                let stillContains = false;
 
-                if (!value.some(v => v.deviceId === deviceId)) {
+                // Handle new Value Pair.
+                value.forEach((device) => {
+                    if (device.deviceId === deviceId) stillContains = true;
+                });
+
+                // Check if device is still in list.
+                if (!stillContains) {
                     $(element).remove();
-                    console.log("Removing Device:", deviceId);
+
+                    console.log(`Removed device ${deviceId} from list.`);
                 }
             }
         });
@@ -1979,15 +1989,37 @@ class Wizard {
             Wizard.deviceSelectorOpen = true;
 
             // Prepare Selector.
-            const data = `<select id="electron-device-selector" class="form-select"><option id="select-dummy" value="0">Select Device</option></select>`;
+            const data = `<select id="electron-device-selector" class="form-select"><option value="select-dummy">Select Device</option></select>`;
 
             // Show Confirm Dialog.
             Confirm.show(i18next.t("common:device-select"), data, i18next.t("common:yes"), i18next.t("common:no"), () => {
                 // Print Debug Message.
                 console.log("Device selected!");
+
+                // Get Selected Device.
+                const device = $("#electron-device-selector").val();
+
+                // Connect to Device.
+                if (device !== "select-dummy") {
+                    console.log(`Connecting to device ${device}...`);
+
+                    // Select Device by MAC.
+                    // @ts-ignore
+                    window.electronAPI?.selectBluetoothDevice(device);
+
+                    // Reset Popup State.
+                    Wizard.deviceSelectorOpen = false;
+                }
             }, () => {
                 // Print Debug Message.
                 console.log("Cancel Device Selection.");
+
+                // Cancel Device Selection.
+                // @ts-ignore
+                window.electronAPI?.selectBluetoothDevice("CANCEL");
+
+                // Reset Popup State.
+                Wizard.deviceSelectorOpen = false;
             }, {
                 plainText: false,
                 messageMaxLength: 99999

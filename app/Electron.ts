@@ -1,8 +1,9 @@
-import {app, BrowserWindow} from 'electron';
+import {app, BrowserWindow, ipcMain} from 'electron';
 import * as path from "node:path";
 
 class Electron {
     private windowInstance: BrowserWindow | null = null;
+    private bluetoothCallback: ((deviceId: string) => void) | undefined;
 
     /**
      * Constructor for initializing the main class instance. Sets up necessary functionality by
@@ -46,8 +47,21 @@ class Electron {
             // Send Device List to Frontend.
             this.windowInstance?.webContents.send("devices", devices);
 
+            // Store Callback Instance for Handling Device Selection in Frontend.
+            this.bluetoothCallback = callback;
+
             // Print Debug Message.
             console.log("Bluetooth device list dispatched.");
+        });
+
+        // Handle Bluetooth Device Selection.
+        ipcMain.on("select", (event, value) => {
+            console.log(`Selected Device: ${value}`);
+
+            if (this.bluetoothCallback !== undefined) {
+                // Send Selected Device to Frontend.
+                this.bluetoothCallback((value == "CANCEL" ? "" : value));
+            }
         });
 
         // Print Debug Message.

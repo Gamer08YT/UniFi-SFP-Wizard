@@ -9,5 +9,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     },
     startScan: (callback) => {
         ipcRenderer.on("started", callback);
-    }
+    },
+    selectBluetoothDevice: (value) => {
+        ipcRenderer.send("select", value);
+    },
 });
