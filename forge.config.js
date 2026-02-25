@@ -18,8 +18,8 @@ module.exports = {
                     packageBackgroundColor: '#131517',
                     publisher: 'CN=555309DB-480B-42F6-B556-988555579009',
                     packageMinOSVersion: "10.0.26100.0",
-                    packageName: "37017jaxnprivate.UnofficialUniFiSFPWizard",
-                    packageIdentity: "37017jaxnprivate.UnofficialUniFiSFPWizard"
+                    packageName: "37017jaxnprivate.SFPWizard",
+                    packageIdentity: "37017jaxnprivate.SFPWizard"
                 }
             }
         },
@@ -27,11 +27,11 @@ module.exports = {
             name: '@electron-forge/maker-deb',
             config: {
                 options: {
-                    productName: "Unofficial UniFi Talk Softphone",
-                    genericName: "Softphone",
+                    productName: "SFP Wizard",
+                    genericName: "Wizard",
                     section: "sound",
                     maintainer: 'Jan Heil',
-                    homepage: 'https://github.com/Gamer08YT/UniFi-Softphone'
+                    homepage: 'https://github.com/Gamer08YT/UniFi-SFP-Wizard'
                 }
             }
         },
