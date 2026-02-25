@@ -47,6 +47,9 @@ class Wizard {
     // Store Wizard Mac to Query via Service V2 (Hybrid HTTP API).
     private static deviceId: any;
 
+    // Store State of Electron Device Selector.
+    private static deviceSelectorOpen = false;
+
 
     constructor() {
         // Prepare Locale.
@@ -1896,16 +1899,90 @@ class Wizard {
         console.log("Registering Electron Bridge if exists.");
 
         // @ts-ignore
+        console.log(window.electronAPI);
+
+        // @ts-ignore
         if (window.electronAPI !== undefined) {
             console.log("Registering Electron IPC handler...");
 
+            // Show Scan Popup.
+            // @ts-ignore
+            window.electronAPI?.startScan(() => {
+                // Show Device Selector.
+                this.showDeviceSelector();
+            });
+
             // @ts-ignore
             window.electronAPI?.handleBluetoothDevices((_evt: IpcRendererEvent, value: ElectronBluetoothDevice[]) => {
-                // Use the devices array to create the popup
-                console.log(value);
+                // Update Device List.
+                this.updateDevice(value);
             });
         } else {
             console.log("Electron API not found.");
+        }
+    }
+
+
+    /**
+     * Updates the device list with the provided array of ElectronBluetoothDevice objects.
+     *
+     * @param {ElectronBluetoothDevice[]} value - An array of ElectronBluetoothDevice objects to update the device list.
+     * @return {void} This method does not return a value.
+     */
+    private updateDevice(value: any[]): void {
+        /**
+         * [
+         *     {
+         *         "deviceName": "Unbekanntes oder nicht unterstütztes Gerät (21:9C:CD:52:35:02)",
+         *         "deviceId": "21:9C:CD:52:35:02"
+         *     },
+         *     {
+         *         "deviceName": "Super Drive",
+         *         "deviceId": "B4:37:D1:09:2B:C8"
+         *     }
+         * ]
+         */
+        // Remove old devices if not in the list.
+        $("#electron-device-selector").children("option").each((id, element) => {
+            if ($(element).attr("id") !== "select-dummy") {
+                // Remove Device if not in List.
+                value.find(v => v.deviceId === $(element).attr("value")) || $(element).remove() && console.log("Removing Device: ", $(element).attr("value"));
+            }
+        });
+
+        // Add new Devices.
+        value.forEach(v => {
+            console.log(`New Device found: ${v.deviceName} (${v.deviceId})`);
+
+            if ($("#electron-device-selector").children(`option[value="${v.deviceId}"]`).length === 0) {
+                $("#electron-device-selector").append(`<option value="${v.deviceId}">${v.deviceName}</option>`);
+            }
+        });
+    }
+
+    /**
+     * Displays the device selector popup if it is not already open.
+     * The popup allows the user to select a device from an*/
+    private showDeviceSelector() {
+        if (!Wizard.deviceSelectorOpen) {
+            console.log("Scan Popup Opened!");
+
+            // Toggle Device Selector State.
+            Wizard.deviceSelectorOpen = true;
+
+            // Prepare Selector.
+            const data = `<select id="electron-device-selector" class="form-select"><option id="select-dummy" value="0">Select Device</option></select>`;
+
+            // Show Confirm Dialog.
+            Confirm.show(i18next.t("common:device-select"), data, i18next.t("common:yes"), i18next.t("common:no"), () => {
+                // Print Debug Message.
+                console.log("Device selected!");
+            }, () => {
+                // Print Debug Message.
+                console.log("Cancel Device Selection.");
+            }, {
+                plainText: false
+            });
         }
     }
 }

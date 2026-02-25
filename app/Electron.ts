@@ -34,9 +34,14 @@ class Electron {
             },
         });
 
+        console.log(`Loading Preload ${path.join(__dirname, "preload.js")}`)
+
         // Listen for Bluetooth Device Selection.
         this.windowInstance.webContents.on("select-bluetooth-device", (event, devices, callback) => {
             event.preventDefault();
+
+            // Open Popup in Frontend.
+            this.windowInstance?.webContents.send("started");
 
             // Send Device List to Frontend.
             this.windowInstance?.webContents.send("devices", devices);
