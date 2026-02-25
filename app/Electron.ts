@@ -34,6 +34,17 @@ class Electron {
             },
         });
 
+        // Listen for Bluetooth Device Selection.
+        this.windowInstance.webContents.on("select-bluetooth-device", (event, devices, callback) => {
+            event.preventDefault();
+
+            // Send Device List to Frontend.
+            win.webContents.send("devices", devices);
+
+            // Print Debug Message.
+            console.log("Bluetooth device list dispatched.");
+        });
+
         // Print Debug Message.
         console.log("Window Created");
 
