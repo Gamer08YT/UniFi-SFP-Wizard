@@ -21,13 +21,6 @@
 
     --shadow-1: 0 10px 30px rgba(0, 0, 0, .35);
     --shadow-2: 0 18px 60px rgba(0, 0, 0, .55);
-
-    --primary-text: #c0ecfa;
-    --secondary-text: #c7c9cc;
-    --disabled-text: #72767d;
-    --link-text: #2777d5;
-    --primary-color: #131416;
-    --secondary-color: #232426;
 }
 
 /* ---------- Page Background (Liquid Glass backdrop) ---------- */

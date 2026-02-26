@@ -404,6 +404,11 @@ class Wizard {
         Wizard.repoSelect = $("#sfp-repo");
         Wizard.nameButton = $("#name-wizard");
         Wizard.logButton = $("#log-wizard");
+
+        // Load new Theme if Classic Param is not set.
+        if (!Wizard.shouldUseClassicTheme()) {
+            Wizard.ensureThemeStylesheetLoaded("./style.css");
+        }
     }
 
     /**
@@ -2027,6 +2032,37 @@ class Wizard {
             });
         }
     }
+
+    /**
+     * Ensures that a theme stylesheet is loaded into the document. If the stylesheet with the specified `href` is not already present, it creates a new link element and appends it to the document head.
+     *
+     * @param {string} href - The URL of the stylesheet to load.
+     * @return {void}
+     */
+    private static ensureThemeStylesheetLoaded(href: string): void {
+        if (document.querySelector(`link[rel="stylesheet"][href="${href}"]`)) return;
+
+        const link = document.createElement("link");
+        link.rel = "stylesheet";
+        link.href = href;
+        document.head.appendChild(link);
+    }
+
+
+    /**
+     * Determines if the classic theme should be used based on the query parameter "classic" in the provided search string.
+     *
+     * @param {string} [search=window.location.search] - The search string to parse query parameters from. Defaults to the current window's location search string.
+     * @return {boolean} Returns true if the "classic" query parameter exists*/
+    private static shouldUseClassicTheme(search: string = window.location.search): boolean {
+        const params = new URLSearchParams(search);
+
+        if (!params.has("classic")) return false;
+
+        const v = (params.get("classic") ?? "").trim().toLowerCase();
+        return v === "" || v === "1" || v === "true" || v === "yes" || v === "on";
+    }
+
 }
 
 new Wizard();
