@@ -1,5 +1,5 @@
 {
-  "name": "UniFi-SFP-Wizard",
+  "name": "SFP-Wizard",
   "version": "1.0.0",
   "description": "This tool allows you to program SFP modules via your browser.\nThe tool connects to your SFP Wizard using the Web Bluetooth API.",
   "main": "app/Electron.js",
