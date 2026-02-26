@@ -27,6 +27,8 @@ class Electron {
             minWidth: 800,
             minHeight: 950,
             height: 1000,
+            title: "SFP Wizard",
+            center: true,
             icon: path.join(__dirname, "../build/icon.png"),
             autoHideMenuBar: true,
             webPreferences: {
