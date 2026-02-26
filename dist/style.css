@@ -1,3 +1,237 @@
+/* UniFi x Liquid Glass theme for Bootstrap 5 (dark)
+   - glass cards
+   - subtle borders + blur
+   - UniFi-ish blue accent
+*/
+
+/* ---------- Theme Tokens ---------- */
+:root{
+    --u-accent: #0077ff;          /* UniFi-ish blue */
+    --u-accent-2: #24a3ff;
+    --u-ok: #2ecc71;
+    --u-warn: #f5c542;
+    --u-danger: #ff4d4f;
+
+    --u-bg-0: #06080d;
+    --u-bg-1: #0a1020;
+    --u-text: rgba(255,255,255,.90);
+    --u-muted: rgba(255,255,255,.68);
+
+    --glass-fill: rgba(255,255,255,.06);
+    --glass-fill-2: rgba(255,255,255,.085);
+    --glass-stroke: rgba(255,255,255,.14);
+    --glass-stroke-2: rgba(0,119,255,.30);
+
+    --glass-blur: 18px;
+    --glass-radius: 18px;
+
+    --shadow-1: 0 10px 30px rgba(0,0,0,.35);
+    --shadow-2: 0 18px 60px rgba(0,0,0,.55);
+}
+
+/* ---------- Page Background (Liquid Glass backdrop) ---------- */
+html, body{
+    height: 100%;
+}
+
+body{
+    color: var(--u-text);
+    background:
+            radial-gradient(1200px 800px at 18% 10%, rgba(0,119,255,.22), transparent 55%),
+            radial-gradient(1000px 700px at 82% 22%, rgba(36,163,255,.12), transparent 58%),
+            radial-gradient(900px 650px at 60% 92%, rgba(46,204,113,.10), transparent 55%),
+            linear-gradient(180deg, var(--u-bg-0), var(--u-bg-1));
+    background-attachment: fixed;
+}
+
+/* Optional: subtle “glass noise” overlay */
+body::before{
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: .12;
+    mix-blend-mode: overlay;
+    background-image:
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E");
+}
+
+/* ---------- Typography / Layout ---------- */
+#page-container{
+    padding-top: 22px;
+    padding-bottom: 10px;
+}
+
+.hero h1{
+    letter-spacing: .2px;
+    font-weight: 650;
+}
+
+.hero p, .hero b{
+    color: var(--u-muted);
+}
+
+/* ---------- Glass Cards ---------- */
+.card{
+    border-radius: var(--glass-radius);
+    border: 1px solid var(--glass-stroke);
+    background: linear-gradient(180deg, var(--glass-fill), rgba(255,255,255,.03));
+    box-shadow: var(--shadow-1);
+    backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+}
+
+.card .card{
+    /* nested cards slightly “raised” */
+    background: linear-gradient(180deg, var(--glass-fill-2), rgba(255,255,255,.03));
+    border-color: rgba(255,255,255,.16);
+    box-shadow: 0 8px 26px rgba(0,0,0,.35);
+}
+
+.card-title{
+    font-weight: 650;
+}
+
+/* spacing consistency */
+.card-body p{
+    margin-bottom: .45rem;
+}
+
+/* ---------- Images in cards ---------- */
+.card-img-top{
+    filter: drop-shadow(0 14px 22px rgba(0,0,0,.45));
+}
+
+/* ---------- Buttons (UniFi-ish) ---------- */
+.btn{
+    border-radius: 12px;
+    font-weight: 600;
+    letter-spacing: .1px;
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 10px 24px rgba(0,0,0,.25);
+}
+
+.btn:focus-visible{
+    outline: none;
+    box-shadow:
+            0 0 0 .18rem rgba(0,119,255,.30),
+            0 10px 24px rgba(0,0,0,.25);
+}
+
+.btn-primary{
+    background: linear-gradient(180deg, rgba(0,119,255,.95), rgba(0,95,210,.95));
+    border-color: rgba(0,119,255,.55);
+}
+
+.btn-primary:hover{
+    background: linear-gradient(180deg, rgba(36,163,255,.98), rgba(0,119,255,.92));
+    border-color: rgba(36,163,255,.65);
+}
+
+.btn-danger{
+    background: linear-gradient(180deg, rgba(255,77,79,.95), rgba(210,40,44,.95));
+    border-color: rgba(255,77,79,.55);
+}
+
+.btn-warning{
+    color: #10131a;
+    background: linear-gradient(180deg, rgba(245,197,66,.98), rgba(214,162,20,.98));
+    border-color: rgba(245,197,66,.55);
+}
+
+.btn-success{
+    background: linear-gradient(180deg, rgba(46,204,113,.95), rgba(34,158,85,.95));
+    border-color: rgba(46,204,113,.55);
+}
+
+/* Disabled buttons: more “frosted” */
+.btn:disabled, .btn.disabled{
+    opacity: .55;
+    background: rgba(255,255,255,.08);
+    border-color: rgba(255,255,255,.10);
+    box-shadow: none;
+}
+
+/* ---------- Form Controls (glass inputs) ---------- */
+.form-control,
+.form-select{
+    border-radius: 12px;
+    color: var(--u-text);
+    border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.06);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter: blur(10px) saturate(140%);
+    -webkit-backdrop-filter: blur(10px) saturate(140%);
+}
+
+.form-control:focus,
+.form-select:focus{
+    color: var(--u-text);
+    border-color: rgba(0,119,255,.60);
+    box-shadow:
+            0 0 0 .18rem rgba(0,119,255,.22),
+            inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+.form-label{
+    color: var(--u-muted);
+    font-weight: 600;
+}
+
+/* ---------- Switch ---------- */
+.form-switch .form-check-input{
+    cursor: pointer;
+    background-color: rgba(255,255,255,.18);
+    border-color: rgba(255,255,255,.20);
+}
+.form-switch .form-check-input:checked{
+    background-color: rgba(0,119,255,.85);
+    border-color: rgba(0,119,255,.55);
+}
+
+/* ---------- Links / Footer ---------- */
+a{
+    color: rgba(36,163,255,.95);
+    text-decoration: none;
+}
+a:hover{
+    color: rgba(0,119,255,1);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+footer{
+    color: var(--u-muted);
+}
+footer .border-bottom{
+    border-color: rgba(255,255,255,.10) !important;
+}
+
+/* ---------- Log container (optional, if you want it to look like a UniFi console) ---------- */
+#log-container{
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.22);
+    padding: 12px;
+    min-height: 160px;
+    max-height: 320px;
+    overflow: auto;
+}
+
+/* Nice scrollbar (Chromium/Electron) */
+#log-container::-webkit-scrollbar{
+    height: 10px;
+    width: 10px;
+}
+#log-container::-webkit-scrollbar-thumb{
+    background: rgba(255,255,255,.14);
+    border-radius: 999px;
+    border: 2px solid rgba(0,0,0,.25);
+}
+#log-container::-webkit-scrollbar-thumb:hover{
+    background: rgba(255,255,255,.22);
+}
+
 :root {
     --primary-text: #c0ecfa;
     --secondary-text: #c7c9cc;
@@ -73,4 +307,66 @@ input[disabled], select[disabled] {
 
 .btn-group {
     display: inline;
+}
+
+/* --- Notiflix: UniFi Liquid Glass overrides --- */
+
+/* Notify container */
+.notiflix-notify {
+  filter: drop-shadow(0 18px 40px rgba(0,0,0,.45));
+}
+
+/* Notify toast */
+.notiflix-notify .notiflix-notify-content {
+  border: 1px solid rgba(255,255,255,.14) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)) !important;
+  backdrop-filter: blur(18px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+}
+
+/* Make the colored “type background” still visible but subtle */
+.notiflix-notify .notiflix-notify-content > div {
+  background: transparent !important;
+}
+
+/* Text */
+.notiflix-notify .notiflix-notify-content,
+.notiflix-notify .notiflix-notify-content * {
+  color: rgba(255,255,255,.92) !important;
+}
+
+/* Icons */
+.notiflix-notify .notiflix-notify-icon {
+  opacity: .95;
+}
+
+/* Confirm / Report (modal cards) */
+.notiflix-confirm-content,
+.notiflix-report-content {
+  border: 1px solid rgba(255,255,255,.14) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04)) !important;
+  box-shadow: 0 20px 70px rgba(0,0,0,.60) !important;
+  backdrop-filter: blur(18px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
+}
+
+/* Modal overlay (backdrop) */
+.notiflix-confirm-overlay,
+.notiflix-report-overlay,
+.notiflix-loading {
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* Buttons in confirm/report */
+.notiflix-confirm-buttons button,
+.notiflix-report-buttons button {
+  border-radius: 12px !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,.25) !important;
+}
+
+/* Loading box */
+.notiflix-loading .notiflix-loading-message {
+  color: rgba(255,255,255,.92) !important;
 }
