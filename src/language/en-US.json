@@ -53,5 +53,6 @@
   "sif-error": "Unable to read the serial interface.",
   "sif-start": "Log file was created and will be downloaded now from the Wizard.",
   "sif-finish": "Log file was successfully downloaded.",
-  "device-select": "Select device"
+  "device-select": "Select device",
+  "module-meta-description": "Click on <b>Read SFP</b> to read the Metadata from the Module."
 }

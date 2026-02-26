@@ -132,6 +132,7 @@ body::before {
 }
 
 .btn-warning {
+    --bs-btn-color: #fff;
     color: var(--bs-btn-color) !important;
     background: linear-gradient(180deg, rgba(245, 197, 66, .98), rgba(214, 162, 20, .98));
     border-color: rgba(245, 197, 66, .55);

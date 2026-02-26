@@ -53,5 +53,6 @@
   "sif-error": "Das Serial Interface konnte nicht gelesen werden.",
   "sif-start": "Logdatei wurde erstellt und wird nun vom Wizard runtergeladen.",
   "sif-finish": "Logdatei wurde erfolgreich heruntergeladen.",
-  "device-select": "Gerät auswählen"
+  "device-select": "Gerät auswählen",
+  "module-meta-description": "Auf <b>Lesen</b> drücken um die Metadaten des Moduls auszulesen."
 }

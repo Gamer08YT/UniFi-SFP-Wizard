@@ -1269,7 +1269,7 @@ class Wizard {
      */
     private setPage(key: string, value: any): void {
         $("#page-" + key
-        ).text(value);
+        ).html(value);
     }
 
     /**
@@ -1476,6 +1476,7 @@ class Wizard {
         this.setPage("name", i18next.t("common:name"));
         this.setPage("serial", i18next.t("common:serial"));
         this.setPage("battery", i18next.t("common:battery"));
+        this.setPage("module-meta", i18next.t("common:module-meta-description"));
 
         // Replace the default button text with localized versions.
         Wizard.connectButton.text(i18next.t("common:connect"));
@@ -1989,7 +1990,7 @@ class Wizard {
             Wizard.deviceSelectorOpen = true;
 
             // Prepare Selector.
-            const data = `<select id="electron-device-selector" class="form-select"><option value="select-dummy">${i18next.t("common:device-select")}</option></select>`;
+            const data = `<select id="electron-device-selector" class="form-select"><option value="select-dummy" disabled>${i18next.t("common:device-select")}</option></select>`;
 
             // Show Confirm Dialog.
             Confirm.show(i18next.t("common:device-select"), data, i18next.t("common:yes"), i18next.t("common:no"), () => {
