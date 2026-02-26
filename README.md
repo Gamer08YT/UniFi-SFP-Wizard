@@ -10,7 +10,13 @@ Feel free to contribute to this project.
 
 ## Live Demo
 
+#### Glass Design
+
 https://gamer08yt.github.io/UniFi-SFP-Wizard/
+
+#### Classic BS5
+
+https://gamer08yt.github.io/UniFi-SFP-Wizard/?classic
 
 ## Features
 
