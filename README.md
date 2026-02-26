@@ -104,6 +104,22 @@ explains why some modules are not working.
 
 This project is oriented at the https://github.com/vitaminmoo/sfpw-tool Repository, thank you for your work.
 
+### Libraries and Software
+
+For detailed information about the used libraries, please have a look at the <code>package.json</code> File.
+
+- TypeScript
+- Bootstrap 5
+- Web Bluetooth API
+- JQuery
+- Electron
+- Electron Forge
+- Webpack
+- i18next
+- Pako
+- Notiflix
+- js-untar
+
 ## Disclaimer
 
 #### I accept no liability for damage, data loss or other problems.
