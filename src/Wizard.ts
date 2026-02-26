@@ -1989,7 +1989,7 @@ class Wizard {
             Wizard.deviceSelectorOpen = true;
 
             // Prepare Selector.
-            const data = `<select id="electron-device-selector" class="form-select"><option value="select-dummy">Select Device</option></select>`;
+            const data = `<select id="electron-device-selector" class="form-select"><option value="select-dummy">${i18next.t("common:device-select")}</option></select>`;
 
             // Show Confirm Dialog.
             Confirm.show(i18next.t("common:device-select"), data, i18next.t("common:yes"), i18next.t("common:no"), () => {
