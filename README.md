@@ -18,6 +18,10 @@ https://gamer08yt.github.io/UniFi-SFP-Wizard/
 
 https://gamer08yt.github.io/UniFi-SFP-Wizard/?classic
 
+#### Forum Demo
+
+https://ubiquiti-networks-forum.de/sfp-wizard/
+
 ## Features
 
 - Device Functions
