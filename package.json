@@ -1,6 +1,6 @@
 {
   "name": "SFP-Wizard",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "This tool allows you to program SFP modules via your browser.\nThe tool connects to your SFP Wizard using the Web Bluetooth API.",
   "main": "app/Electron.js",
   "scripts": {
