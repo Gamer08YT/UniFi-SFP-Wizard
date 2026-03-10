@@ -8,6 +8,10 @@ Feel free to contribute to this project.
 
 ![Dashboard](/assets/img/dashboard.png)
 
+#### Microsoft Store
+
+https://apps.microsoft.com/detail/9nb23j84168c?hl=de-DE&gl=DE
+
 ## Live Demo
 
 #### Glass Design
