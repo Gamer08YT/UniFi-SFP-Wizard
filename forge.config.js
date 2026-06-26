@@ -1,6 +1,9 @@
 module.exports = {
     packagerConfig: {
-        icon: "./build/icon",
+        icon: [
+            "./build/icon.png",
+            "./build/icon.icns"
+        ],
         linux: {
             target: 'deb'
         }
@@ -27,6 +30,7 @@ module.exports = {
             name: '@electron-forge/maker-deb',
             config: {
                 options: {
+                    icon: './build/icon.png',
                     productName: "SFP Wizard Tool",
                     genericName: "Wizard",
                     section: "sound",
