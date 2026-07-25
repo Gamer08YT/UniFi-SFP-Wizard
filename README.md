@@ -146,7 +146,6 @@ For detailed information about the used libraries, please have a look at the <co
 ### For legal claims about used product images, please contact me in the Ubiquiti Community ([JaXnPriVate](https://community.ui.com/user/JaXnPublic/a521c964-0aba-4ad4-89aa-b42b5066e8a5)).
 
 ## From Posi - Changes in this fork
-
 - Fixed a JSON syntax error in `repository/dumps.json` that broke the EEPROM dropdown
 - `Repository.ts` now reads the `name` field from `dumps.json` to label dropdown entries,
   instead of just using the raw filename
