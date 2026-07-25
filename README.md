@@ -39,11 +39,11 @@ https://github.com/Gamer08YT/UniFi-SFP-Wizard/releases/
 
 #### Glass Design
 
-https://gamer08yt.github.io/UniFi-SFP-Wizard/
+https://posi211.github.io/UniFi-SFP-Wizard/
 
 #### Classic BS5
 
-https://gamer08yt.github.io/UniFi-SFP-Wizard/?classic
+https://posi211.github.io/UniFi-SFP-Wizard/?classic
 
 #### Forum Demo
 
