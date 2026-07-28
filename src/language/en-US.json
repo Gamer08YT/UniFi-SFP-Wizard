@@ -54,5 +54,9 @@
   "sif-start": "Log file was created and will be downloaded now from the Wizard.",
   "sif-finish": "Log file was successfully downloaded.",
   "device-select": "Select device",
-  "module-meta-description": "Click on <b>Read SFP</b> to read the Metadata from the Module."
+  "module-meta-description": "Click on <b>Read SFP</b> to read the Metadata from the Module.",
+  "backup-required-message": "No local backup found for this module's serial number. Please click \"Save\" first to back it up before writing.",
+  "backup-saved-message": "Module EEPROM backed up locally on this device.",
+  "backup-read-error": "Unable to verify a backup exists - please read the module again before writing.",
+  "backup-none-found": "No matching backups found."
 }
