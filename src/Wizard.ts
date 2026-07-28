@@ -31,6 +31,15 @@ class Wizard {
     private static repoSelect: JQuery<HTMLElement>;
     private static logButton: JQuery<HTMLElement>;
 
+    // Store Source Toggle Elements.
+    private static sourceFileRadio: JQuery<HTMLElement>;
+    private static sourceRepoRadio: JQuery<HTMLElement>;
+    private static fileGroup: JQuery<HTMLElement>;
+    private static repoGroup: JQuery<HTMLElement>;
+
+    // Store fetched EEPROM bytes for the currently selected Repository entry.
+    private static repoEepromData: Uint8Array | null = null;
+
     // Store GATT Characteristic Instances.
     private static infoChar: BluetoothRemoteGATTCharacteristic;
     private static apiNotifyChar: BluetoothRemoteGATTCharacteristic;
@@ -238,6 +247,58 @@ class Wizard {
      * @return {void} This method does not return a value.
      */
     private registerListeners(): void {
+        // Register EEPROM Source Toggle Listeners.
+        Wizard.sourceFileRadio.on("change", () => {
+            if ((Wizard.sourceFileRadio[0] as HTMLInputElement).checked) {
+                Wizard.fileGroup.show();
+                Wizard.repoGroup.hide();
+
+                // Clear whatever the Repository side had selected/loaded.
+                (Wizard.repoSelect[0] as HTMLSelectElement).selectedIndex = 0;
+                Wizard.repoEepromData = null;
+            }
+        });
+
+        Wizard.sourceRepoRadio.on("change", () => {
+            if ((Wizard.sourceRepoRadio[0] as HTMLInputElement).checked) {
+                Wizard.repoGroup.show();
+                Wizard.fileGroup.hide();
+
+                // Clear whatever the Local File side had selected.
+                (Wizard.eepromUpload[0] as HTMLInputElement).value = "";
+            }
+        });
+
+        // Register Repository Select Listener - fetches the chosen dump's bytes.
+        Wizard.repoSelect.on("change", async () => {
+            const filename = Wizard.repoSelect.val() as string;
+
+            // Guard against the static placeholder options ("Select EEPROM Config", "Todo")
+            // that ship in the markup before Repository.fetchTemplates() appends real entries.
+            if (!filename || !filename.endsWith(".uieeprom")) {
+                Wizard.repoEepromData = null;
+                return;
+            }
+
+            try {
+                const url = `https://raw.githubusercontent.com/posi211/UniFi-SFP-Wizard/master/repository/${filename}`;
+                const response = await fetch(url);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const buffer = await response.arrayBuffer();
+                Wizard.repoEepromData = new Uint8Array(buffer);
+
+                console.log(`Loaded ${Wizard.repoEepromData.length} bytes from repository entry '${filename}'.`);
+            } catch (e) {
+                console.warn(`Failed to fetch repository EEPROM '${filename}'.`, e);
+                Wizard.repoEepromData = null;
+                Wizard.notify(i18next.t("common:eeprom-file-error"), "failure");
+            }
+        });
+
         // Register Connect Button Click Listener.
         Wizard.connectButton.on("click", () => {
             if (Wizard.device == null) {
@@ -403,6 +464,12 @@ class Wizard {
         Wizard.repoSelect = $("#sfp-repo");
         Wizard.nameButton = $("#name-wizard");
         Wizard.logButton = $("#log-wizard");
+
+        // Source Toggle Elements.
+        Wizard.sourceFileRadio = $("#sfp-source-file");
+        Wizard.sourceRepoRadio = $("#sfp-source-repo");
+        Wizard.fileGroup = $("#sfp-file-group");
+        Wizard.repoGroup = $("#sfp-repo-group");
 
         // Load new Theme if Classic Param is not set.
         if (!Wizard.shouldUseClassicTheme()) {
@@ -1642,6 +1709,10 @@ class Wizard {
      * @return {boolean} Returns true if an EEPROM file is selected; otherwise, false.
      */
     private checkEEPROMSelection() {
+        if ((Wizard.sourceRepoRadio[0] as HTMLInputElement).checked) {
+            return Wizard.repoEepromData !== null;
+        }
+
         // @ts-ignore
         return Wizard.isFileSelected(Wizard.eepromUpload);
     }
@@ -1766,6 +1837,10 @@ class Wizard {
      * or null if no file is selected or the input element is not found.
      */
     private async readFile() {
+        if ((Wizard.sourceRepoRadio[0] as HTMLInputElement).checked) {
+            return Wizard.repoEepromData;
+        }
+
         const input = document.getElementById("sfp-file") as HTMLInputElement | null;
         const file = input?.files?.[0];
         if (!file) return null;
