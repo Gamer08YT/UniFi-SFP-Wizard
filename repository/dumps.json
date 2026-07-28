@@ -43,6 +43,12 @@
       "name": "Finisar FTLF8519P2BCL HP J4858C 1000Base-SX MMF, 850nm, 550m, LC, DOM",
       "vendor": "Finisar",
       "author": "Maui"
-    }
+    },
+    {
+  "file": "BN-CKM-SP-SR.uieeprom",
+  "name": "IBM/Blade Network BN-CKM-SP-SR 10GBase-SR (850nm, 300m)",
+  "vendor": "IBM/Blade Network Technologies",
+  "author": "krusic22 (SFP-Transceiver-Flashing collection)"
+   }
   ]
 }
