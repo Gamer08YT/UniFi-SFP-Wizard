@@ -86,8 +86,24 @@ The tool connects to your SFP Wizard using the Web Bluetooth API.">
                                 <!-- Start: SFP Flash -->
                                 <div id="sfp-flash">
                                     <h5 class="card-title">Module Flash</h5>
-                                    <!-- Start: EEPROM Config Upload -->
+
+                                    <!-- Start: Source Toggle -->
                                     <div class="mb-3">
+                                        <div class="btn-group" role="group" aria-label="EEPROM Source">
+                                            <input type="radio" class="btn-check" name="sfp-source"
+                                                   id="sfp-source-file" autocomplete="off" checked>
+                                            <label class="btn btn-outline-primary" for="sfp-source-file">Local
+                                                File</label>
+
+                                            <input type="radio" class="btn-check" name="sfp-source"
+                                                   id="sfp-source-repo" autocomplete="off">
+                                            <label class="btn btn-outline-primary" for="sfp-source-repo">Repository</label>
+                                        </div>
+                                    </div>
+                                    <!-- End: Source Toggle -->
+
+                                    <!-- Start: EEPROM Config Upload -->
+                                    <div class="mb-3" id="sfp-file-group">
                                         <label for="sfp-file" class="form-label">EEPROM Configuration</label>
                                         <input class="form-control" disabled type="file" accept=".uieeprom"
                                                id="sfp-file">
@@ -95,7 +111,7 @@ The tool connects to your SFP Wizard using the Web Bluetooth API.">
                                     <!-- End: EEPROM Config Upload -->
 
                                     <!-- Start: Repo EEPROM Config Select -->
-                                    <div class="mb-3">
+                                    <div class="mb-3" id="sfp-repo-group" style="display: none;">
                                         <label for="sfp-repo" class="form-label">EEPROM Repository</label>
                                         <select class="form-select" id="sfp-repo" disabled
                                                 aria-label="Default select example">
