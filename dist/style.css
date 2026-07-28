@@ -228,18 +228,22 @@ span, p {
 }
 
 select {
-    color: var(--primary-text) !important;
+    color: var(--u-text) !important;
 }
 
 select, input {
-    color: var(--secondary-text) !important;
-    background-color: var(--primary-color) !important;
-    border-color: var(--secondary-color) !important;
+    color: var(--u-text) !important;
+}
+
+select option {
+    color: var(--u-text);
+    background-color: var(--u-bg-1);
 }
 
 input[disabled], select[disabled] {
-    background-color: var(--secondary-color) !important;
-    color: var(--disabled-text) !important;
+    opacity: .55;
+    background-color: rgba(255, 255, 255, .04) !important;
+    color: var(--u-muted) !important;
 }
 
 .template-elements {
