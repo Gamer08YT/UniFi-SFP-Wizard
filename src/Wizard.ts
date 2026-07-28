@@ -9,6 +9,7 @@ import {deflate, inflate} from "pako";
 import {ProtocolType} from "./ProtocolType";
 import {FormatType} from "./FormatType";
 import {Repository} from "./Repository";
+import {BackupStore} from "./BackupStore";
 import untar from "js-untar";
 
 class Wizard {
@@ -34,11 +35,18 @@ class Wizard {
     // Store Source Toggle Elements.
     private static sourceFileRadio: JQuery<HTMLElement>;
     private static sourceRepoRadio: JQuery<HTMLElement>;
+    private static sourceBackupRadio: JQuery<HTMLElement>;
     private static fileGroup: JQuery<HTMLElement>;
     private static repoGroup: JQuery<HTMLElement>;
+    private static backupGroup: JQuery<HTMLElement>;
+    private static backupSearch: JQuery<HTMLElement>;
+    private static backupSelect: JQuery<HTMLElement>;
 
     // Store fetched EEPROM bytes for the currently selected Repository entry.
     private static repoEepromData: Uint8Array | null = null;
+
+    // Store the currently selected Local Backup entry's bytes.
+    private static backupEepromData: Uint8Array | null = null;
 
     // Store GATT Characteristic Instances.
     private static infoChar: BluetoothRemoteGATTCharacteristic;
@@ -252,10 +260,12 @@ class Wizard {
             if ((Wizard.sourceFileRadio[0] as HTMLInputElement).checked) {
                 Wizard.fileGroup.show();
                 Wizard.repoGroup.hide();
+                Wizard.backupGroup.hide();
 
-                // Clear whatever the Repository side had selected/loaded.
+                // Clear whatever the other two sources had selected/loaded.
                 (Wizard.repoSelect[0] as HTMLSelectElement).selectedIndex = 0;
                 Wizard.repoEepromData = null;
+                Wizard.backupEepromData = null;
             }
         });
 
@@ -263,9 +273,27 @@ class Wizard {
             if ((Wizard.sourceRepoRadio[0] as HTMLInputElement).checked) {
                 Wizard.repoGroup.show();
                 Wizard.fileGroup.hide();
+                Wizard.backupGroup.hide();
 
-                // Clear whatever the Local File side had selected.
+                // Clear whatever the other two sources had selected.
                 (Wizard.eepromUpload[0] as HTMLInputElement).value = "";
+                Wizard.backupEepromData = null;
+            }
+        });
+
+        Wizard.sourceBackupRadio.on("change", () => {
+            if ((Wizard.sourceBackupRadio[0] as HTMLInputElement).checked) {
+                Wizard.backupGroup.show();
+                Wizard.fileGroup.hide();
+                Wizard.repoGroup.hide();
+
+                // Clear whatever the other two sources had selected.
+                (Wizard.eepromUpload[0] as HTMLInputElement).value = "";
+                (Wizard.repoSelect[0] as HTMLSelectElement).selectedIndex = 0;
+                Wizard.repoEepromData = null;
+
+                // Populate the library fresh every time this source is opened.
+                this.refreshBackupList();
             }
         });
 
@@ -296,6 +324,30 @@ class Wizard {
                 console.warn(`Failed to fetch repository EEPROM '${filename}'.`, e);
                 Wizard.repoEepromData = null;
                 Wizard.notify(i18next.t("common:eeprom-file-error"), "failure");
+            }
+        });
+
+        // Register Local Backup Search Listener - re-filters the list as the user types.
+        Wizard.backupSearch.on("input", () => {
+            this.refreshBackupList(Wizard.backupSearch.val() as string);
+        });
+
+        // Register Local Backup Select Listener - loads the chosen backup's bytes from IndexedDB.
+        Wizard.backupSelect.on("change", async () => {
+            const idRaw = Wizard.backupSelect.val() as string;
+            const id = parseInt(idRaw, 10);
+
+            if (!idRaw || isNaN(id)) {
+                Wizard.backupEepromData = null;
+                return;
+            }
+
+            try {
+                const record = await BackupStore.get(id);
+                Wizard.backupEepromData = record ? record.data : null;
+            } catch (e) {
+                console.warn("Failed to load local backup.", e);
+                Wizard.backupEepromData = null;
             }
         });
 
@@ -350,7 +402,32 @@ class Wizard {
         });
 
         // Register Write Control Button.
-        Wizard.writeButton.on("click", () => {
+        Wizard.writeButton.on("click", async () => {
+            // Force a fresh Read before allowing Write, so we're checking against whatever
+            // module is actually inserted right now, not a stale display value from earlier.
+            const currentSn = await this.readXSFP();
+
+            if (!currentSn) {
+                // The read itself failed (e.g. no module inserted) - readXSFP already
+                // showed its own warning toast, so just stop here.
+                return;
+            }
+
+            let hasBackup: boolean;
+            try {
+                hasBackup = await BackupStore.hasBackupForSerial(currentSn);
+            } catch (e) {
+                console.warn("Failed to check local backup library.", e);
+                Wizard.notify(i18next.t("common:backup-read-error"), "failure");
+                return;
+            }
+
+            if (!hasBackup) {
+                // Block the write entirely - require Save first so a local backup exists.
+                Wizard.notify(i18next.t("common:backup-required-message"), "failure");
+                return;
+            }
+
             if (this.checkEEPROMSelection()) {
                 this.writeXSFP().then(r => {
                     if (r !== undefined) {
@@ -468,8 +545,12 @@ class Wizard {
         // Source Toggle Elements.
         Wizard.sourceFileRadio = $("#sfp-source-file");
         Wizard.sourceRepoRadio = $("#sfp-source-repo");
+        Wizard.sourceBackupRadio = $("#sfp-source-backup");
         Wizard.fileGroup = $("#sfp-file-group");
         Wizard.repoGroup = $("#sfp-repo-group");
+        Wizard.backupGroup = $("#sfp-backup-group");
+        Wizard.backupSearch = $("#backup-search");
+        Wizard.backupSelect = $("#sfp-backup");
 
         // Load new Theme if Classic Param is not set.
         if (!Wizard.shouldUseClassicTheme()) {
@@ -1362,8 +1443,8 @@ class Wizard {
      *
      * @return {Promise<void>} A promise that resolves when the XSFP details are successfully retrieved and processed.
      */
-    private async readXSFP() {
-        await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/details`).then((r) => {
+    private async readXSFP(): Promise<string | null> {
+        return await Wizard.sendApiRequest("GET", `/api/1.0/${Wizard.handleMAC(Wizard.deviceId)}/xsfp/module/details`).then((r) => {
             const data = (r as any).body;
             const header = (r as any).header;
 
@@ -1389,9 +1470,13 @@ class Wizard {
 
                 // Print Success Toast.
                 Wizard.notify(i18next.t("common:module-message"), "success");
+
+                return data.sn as string;
             } else {
                 // Print Warning Toast.
                 Wizard.notify(i18next.t("common:module-error"), "warning");
+
+                return null;
             }
         });
     }
@@ -1458,9 +1543,34 @@ class Wizard {
                     console.log(`Received size: ${data.size} and chunk: ${data.chunk}.`);
 
                     // Get Data from Device.
-                    await this.startStreamProcess(0, (data.size = 0 ? 512 : data.size)).then((r) => {
+                    await this.startStreamProcess(0, (data.size = 0 ? 512 : data.size)).then(async (r) => {
                         // Download SFP File to Device.
                         this.downloadStream(r);
+
+                        // Also persist this read into the local backup library (IndexedDB),
+                        // keyed by the serial number parsed straight out of the EEPROM bytes.
+                        try {
+                            const bytes: Uint8Array = (r as any).body;
+                            const meta = Wizard.fetchEEPROM(bytes);
+
+                            if (meta.sn && meta.sn !== "-") {
+                                await BackupStore.save({
+                                    sn: meta.sn,
+                                    partNumber: meta.part,
+                                    vendor: meta.vendor,
+                                    type: bytes.length === 640 ? "qsfp" : "sfp",
+                                    size: bytes.length,
+                                    data: bytes
+                                });
+
+                                // Refresh the library list in case it's currently visible.
+                                await this.refreshBackupList(Wizard.backupSearch.val() as string);
+
+                                Wizard.notify(i18next.t("common:backup-saved-message"), "success");
+                            }
+                        } catch (e) {
+                            console.warn("Failed to store local backup.", e);
+                        }
 
                         // Show Saved Notification.
                         Wizard.notify(i18next.t("common:module-saved"), "success");
@@ -1713,8 +1823,43 @@ class Wizard {
             return Wizard.repoEepromData !== null;
         }
 
+        if ((Wizard.sourceBackupRadio[0] as HTMLInputElement).checked) {
+            return Wizard.backupEepromData !== null;
+        }
+
         // @ts-ignore
         return Wizard.isFileSelected(Wizard.eepromUpload);
+    }
+
+    /**
+     * Re-queries the local IndexedDB backup library (optionally filtered by a search term)
+     * and repopulates the #sfp-backup select with the matching entries.
+     *
+     * @param {string} term - Optional search term (serial, part number, or vendor).
+     * @return {Promise<void>}
+     */
+    private async refreshBackupList(term: string = ""): Promise<void> {
+        try {
+            const records = await BackupStore.search(term);
+
+            Wizard.backupSelect.empty();
+
+            if (records.length === 0) {
+                Wizard.backupSelect.append(
+                    `<option value="" disabled>${i18next.t("common:backup-none-found")}</option>`
+                );
+                Wizard.backupEepromData = null;
+                return;
+            }
+
+            records.forEach(r => {
+                const date = new Date(r.savedAt).toLocaleString();
+                const label = `${r.partNumber} — ${r.sn} (${r.vendor}, saved ${date})`;
+                Wizard.backupSelect.append(`<option value="${r.id}">${label}</option>`);
+            });
+        } catch (e) {
+            console.warn("Failed to load local backup library.", e);
+        }
     }
 
     /**
@@ -1839,6 +1984,10 @@ class Wizard {
     private async readFile() {
         if ((Wizard.sourceRepoRadio[0] as HTMLInputElement).checked) {
             return Wizard.repoEepromData;
+        }
+
+        if ((Wizard.sourceBackupRadio[0] as HTMLInputElement).checked) {
+            return Wizard.backupEepromData;
         }
 
         const input = document.getElementById("sfp-file") as HTMLInputElement | null;
