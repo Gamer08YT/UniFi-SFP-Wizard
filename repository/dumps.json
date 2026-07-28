@@ -10,7 +10,7 @@
     },
     {
       "file": "UACC-CM-RJ45-MG.uieeprom",
-      "name": "UACC-CM-RJ45-MG",
+      "name": "Ubiquiti SFP-RJ45 1G,2.5G,5G,10G 100m",
       "vendor": "Ubiquiti",
       "author": "TheZackCodec"
     },
@@ -37,6 +37,12 @@
       "name": "Ruckus 10G 850nm MM 10G-SFPP-SR-S",
       "VENDER": "Ruckus",
       "author": "Maui"
-    }
+    },
+    {
+      "file": "",
+      "name": "HP 1000Base-SX MMF, 850nm, 550m, LC, DOM",
+      "vender": "HP",
+      "author": "Maui"
+      {
   ]
 }
