@@ -37,10 +37,6 @@ https://github.com/Gamer08YT/UniFi-SFP-Wizard/releases/
 
 ## Live Demo
 
-#### Glass Design
-
-https://posi211.github.io/UniFi-SFP-Wizard/
-
 #### Classic BS5
 
 https://posi211.github.io/UniFi-SFP-Wizard/?classic
