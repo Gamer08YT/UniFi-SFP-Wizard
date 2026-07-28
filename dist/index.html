@@ -98,6 +98,11 @@ The tool connects to your SFP Wizard using the Web Bluetooth API.">
                                             <input type="radio" class="btn-check" name="sfp-source"
                                                    id="sfp-source-repo" autocomplete="off">
                                             <label class="btn btn-outline-primary" for="sfp-source-repo">Repository</label>
+
+                                            <input type="radio" class="btn-check" name="sfp-source"
+                                                   id="sfp-source-backup" autocomplete="off">
+                                            <label class="btn btn-outline-primary" for="sfp-source-backup">My
+                                                Backups</label>
                                         </div>
                                     </div>
                                     <!-- End: Source Toggle -->
@@ -120,6 +125,21 @@ The tool connects to your SFP Wizard using the Web Bluetooth API.">
                                         </select>
                                     </div>
                                     <!-- End: Repo EEPROM Config Select -->
+
+                                    <!-- Start: Local Backup Library -->
+                                    <div class="mb-3" id="sfp-backup-group" style="display: none;">
+                                        <label for="backup-search" class="form-label">My Backups (saved on this
+                                            device/browser)</label>
+                                        <input class="form-control mb-2" type="search" id="backup-search"
+                                               placeholder="Search by serial, part number, or vendor...">
+                                        <select class="form-select" id="sfp-backup" size="6"
+                                                aria-label="Local EEPROM backups">
+                                            <option value="" disabled>No backups saved yet - click "Save" on a
+                                                module first
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <!-- End: Local Backup Library -->
                                 </div>
                                 <!-- End: SFP Flash -->
 
