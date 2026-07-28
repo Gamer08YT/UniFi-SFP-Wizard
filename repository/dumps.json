@@ -10,7 +10,7 @@
     },
     {
       "file": "UACC-CM-RJ45-MG.uieeprom",
-      "name": "Ubiquiti SFP-RJ45 1G 2.5G 5G 10G 100m",
+      "name": "Ubiquiti UACC-CM-RJ56-MG SFP-RJ45 1G 2.5G 5G 10G 100m",
       "vendor": "Ubiquiti",
       "author": "TheZackCodec"
     },
@@ -34,13 +34,13 @@
     },
     {
       "file": "RUCKUS-57-1000340-01.uieeprom",
-      "name": "Ruckus 10G 850nm MM 10G-SFPP-SR-S",
+      "name": "Ruckus-57-1000340-02 10G 850nm MM 10G-SFPP-SR-S",
       "vendor": "Ruckus",
       "author": "Maui"
     },
     {
       "file": "FINISAR CORP.-FTLF8519P2BCL-PR.uieeprom",
-      "name": "Finisar HP 1000Base-SX MMF, 850nm, 550m, LC, DOM",
+      "name": "Finisar FTLF8519P2BCL 1000Base-SX MMF, 850nm, 550m, LC, DOM",
       "vendor": "Finisar",
       "author": "Maui"
     }
