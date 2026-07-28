@@ -7,7 +7,7 @@
 - **Fixed dropdown labels**: `Repository.ts` now reads the `name` field from `dumps.json` to label
   entries in the "EEPROM Repository" dropdown, instead of showing the raw `.uieeprom` filename.
   The actual filename is still used under the hood to load the correct file.
-  **Fixed Repository access**  You can use the repository now to load EEPROM data.
+- **Fixed Repository access**  You can use the repository now to load EEPROM data.
 - **Added EEPROM profiles** for two Cisco modules and one FS.com module (see `repository/dumps.json`
   for details — `CISCO-ACCELINK-RTXM228-551-C98`, `CISCO-FTLF1318P3BTL-C1`, and `FS-SFP1G-LX-31`).
 - **`baseUrl` in `Repository.ts`** points at this fork (`posi211/UniFi-SFP-Wizard`) so the live demo
