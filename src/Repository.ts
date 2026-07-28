@@ -25,6 +25,10 @@ export class Repository {
             const dumpsEntry = data.find(element => element.name === "dumps.json");
 
             const populateOptions = () => {
+                // Remove the static placeholder options (e.g. "Todo") that ship in the
+                // markup, keeping only the leading "Select EEPROM Config" prompt.
+                $("#sfp-repo option[value]").remove();
+
                 // @ts-ignore
                 data.forEach(element => {
                     if (element.name.endsWith(".uieeprom")) {
