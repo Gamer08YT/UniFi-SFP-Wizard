@@ -178,6 +178,32 @@ you could destroy your Module.
 Please have a look at https://github.com/vitaminmoo/sfpw-tool/blob/main/doc/HOW_TO_DOWNGRADE_AND_WHY_NOT_TO.md which 
 explains why some modules are not working.
 
+#### About the firmware's password database (and why we didn't build around it)
+
+The "Database" mentioned above is a password table baked directly into the Wizard's own ESP32
+firmware, used to unlock write-protected EEPROM pages on certain modules before flashing them. It
+can be extracted from an official firmware image using
+[`sfpw-tool`](https://github.com/vitaminmoo/sfpw-tool)'s `fw passdb` command (official firmware
+images are downloadable straight from Ubiquiti's update API, filtered to
+`product=SFP-Wizard&platform=ESP32&channel=release`).
+
+We pulled and parsed this table from a real v1.1.1 firmware image. Every single entry in it is a
+**Ubiquiti-branded** module or cable (`AOC-SFP10-*`, `AOC-QSFP28-*`, `UACC-*`, `DAC-SFP*`,
+`OM-SFP*`, `Uplink-SFP28-*`, `UC-D-QSFP28-*`, etc.) — none of the third-party parts this project
+actually deals with (Cisco, FS.com, Finisar, Ruckus, IBM/Blade Network) appear in it anywhere.
+
+That tells us what the database is actually for: it's Ubiquiti's own unlock codes for their own
+write-protected modules, not something tied to whatever identity you're writing. This project's
+typical use case is the opposite direction — taking a cheap generic module (which, by virtue of
+being a viable donor, essentially never has write-protection enabled in the first place) and
+flashing it with an OEM part number's `.uieeprom` profile so a switch stops rejecting it as an
+unrecognized transceiver. Since the *target identity* being written was never how this database is
+checked, and generic donor modules almost never hit its lock check anyway, there's nothing here for
+this fork to build a compatibility warning around. If you're specifically trying to reflash a
+locked, non-generic module (a genuine Cisco/FS/etc. part with write-protection actually enabled),
+this database won't help you and the module needs the real vendor's own unlock code, which isn't
+published anywhere in Ubiquiti's firmware.
+
 ## Credits
 
 This project is oriented at the https://github.com/vitaminmoo/sfpw-tool Repository, thank you for your work.
@@ -209,4 +235,3 @@ For detailed information about the used libraries, please have a look at the <co
 ### The EEPROM dumps published here are for testing purposes only. If a legal claim arises, please contact me, and I will gladly take it offline.
 
 ### For legal claims about used product images, please contact me in the Ubiquiti Community ([JaXnPriVate](https://community.ui.com/user/JaXnPublic/a521c964-0aba-4ad4-89aa-b42b5066e8a5)).
-
