@@ -10,9 +10,45 @@
     },
     {
       "file": "UACC-CM-RJ45-MG.uieeprom",
-      "name": "UACC-CM-RJ45-MG",
+      "name": "Ubiquiti UACC-CM-RJ56-MG SFP-RJ45 1G 2.5G 5G 10G 100m",
       "vendor": "Ubiquiti",
       "author": "TheZackCodec"
-    }
+    },
+    {
+      "file": "CISCO-ACCELINK-RTXM228-551-C98.uieeprom",
+      "name":  "CISCO-MA-SFP-10GB-SR 10G 850NM MM",
+      "vendor": "Cisco",
+      "author": "Maui"
+    },
+    {  
+      "file": "CISCO-FTLF1318P3BTL-C1.uieeprom",
+      "name": "CISCO-GLC-LH-SMD 1000BASE-LX/LH (1G 1310NM SM)",
+      "vendor": "Cisco",
+      "author": "Maui"
+    },
+    {
+      "file": "FS-SFP1G-LX-31.uieeprom",
+      "name": "FS SFP1G-LX-32 (1310nm SM 1Gig)",
+      "vendor": "FS",
+      "author": "Maui"
+    },
+    {
+      "file": "RUCKUS-57-1000340-01.uieeprom",
+      "name": "Ruckus-57-1000340-02 10G 850nm MM 10G-SFPP-SR-S",
+      "vendor": "Ruckus",
+      "author": "Maui"
+    },
+    {
+      "file": "FINISAR CORP.-FTLF8519P2BCL-PR.uieeprom",
+      "name": "Finisar FTLF8519P2BCL HP J4858C 1000Base-SX MMF, 850nm, 550m, LC, DOM",
+      "vendor": "Finisar",
+      "author": "Maui"
+    },
+    {
+  "file": "BN-CKM-SP-SR.uieeprom",
+  "name": "IBM/Blade Network BN-CKM-SP-SR 10GBase-SR (850nm, 300m)",
+  "vendor": "IBM/Blade Network Technologies",
+  "author": "krusic22 (SFP-Transceiver-Flashing collection)"
+   }
   ]
 }

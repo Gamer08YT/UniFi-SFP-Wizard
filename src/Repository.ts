@@ -2,7 +2,7 @@ import $ from "jquery";
 
 export class Repository {
     // Store Base URL.
-    private static baseUrl = "https://api.github.com/repos/Gamer08YT/UniFi-SFP-Wizard/"
+    private static baseUrl = "https://api.github.com/repos/posi211/UniFi-SFP-Wizard/"
 
     // Store count of Templates to load.
     private static needToLoad = 0;
@@ -18,24 +18,52 @@ export class Repository {
     public static fetchTemplates() {
         const url = this.baseUrl + "contents/repository";
 
-        // Get Request to GitHub API.
         $.get(url, (data) => {
-            // @ts-ignore
-            data.forEach(element => {
-                if (element.name.endsWith(".json")) {
-                    this.needToLoad++;
-                }
-            })
-
+            const nameByFile: { [key: string]: string } = {};
 
             // @ts-ignore
-            data.forEach(element => {
-                if (element.name.endsWith(".uieeprom")) {
-                    $("#sfp-repo").append(`<option value="${element.name}">${element.name.replace(".uieeprom", "")}</option>`)
-                }
-            })
+            const dumpsEntry = data.find(element => element.name === "dumps.json");
 
-            console.log("Fetched Templates.");
+            const populateOptions = () => {
+                // Remove the static placeholder options (e.g. "Todo") that ship in the
+                // markup, keeping only the leading "Select EEPROM Config" prompt.
+                $("#sfp-repo option[value]").remove();
+
+                // @ts-ignore
+                data.forEach(element => {
+                    if (element.name.endsWith(".uieeprom")) {
+                        const label = nameByFile[element.name] || element.name.replace(".uieeprom", "");
+                        $("#sfp-repo").append(`<option value="${element.name}">${label}</option>`)
+                    }
+                })
+
+                console.log("Fetched Templates.");
+            };
+
+            if (dumpsEntry) {
+                $.get(dumpsEntry.download_url, (dumpsData) => {
+                    try {
+                        const parsed = typeof dumpsData === "string" ? JSON.parse(dumpsData) : dumpsData;
+
+                        if (parsed && Array.isArray(parsed.dumps)) {
+                            parsed.dumps.forEach((dump: { file: string, name: string }) => {
+                                if (dump.file && dump.name) {
+                                    nameByFile[dump.file] = dump.name;
+                                }
+                            });
+                        }
+                    } catch (e) {
+                        console.warn("Failed to parse dumps.json, falling back to filenames.", e);
+                    }
+
+                    populateOptions();
+                }).fail(() => {
+                    console.warn("Failed to fetch dumps.json, falling back to filenames.");
+                    populateOptions();
+                });
+            } else {
+                populateOptions();
+            }
         });
     }
 }
