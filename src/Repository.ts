@@ -2,7 +2,7 @@ import $ from "jquery";
 
 export class Repository {
     // Store Base URL.
-    private static baseUrl = "https://api.github.com/repos/posi211/UniFi-SFP-Wizard/"
+    private static baseUrl = "https://api.github.com/repos/Gamer08YT/UniFi-SFP-Wizard/"
 
     // Store count of Templates to load.
     private static needToLoad = 0;

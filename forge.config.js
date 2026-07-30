@@ -1,9 +1,6 @@
 module.exports = {
     packagerConfig: {
-        icon: [
-            "./build/icon.png",
-            "./build/icon.icns"
-        ],
+        icon: "./build/icon.png",
         linux: {
             target: 'deb'
         }
