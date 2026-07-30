@@ -1,34 +1,3 @@
-# UniFi-SFP-Wizard (posi211 fork)
-
-> This is a fork of [Gamer08YT/UniFi-SFP-Wizard](https://github.com/Gamer08YT/UniFi-SFP-Wizard) with the following changes:
-
-## Changes in this fork
-
-- **Fixed dropdown labels**: `Repository.ts` now reads the `name` field from `dumps.json` to label
-  entries in the "EEPROM Repository" dropdown, instead of showing the raw `.uieeprom` filename.
-  The actual filename is still used under the hood to load the correct file.
-- **Added EEPROM profiles** for two Cisco modules and one FS.com module (see `repository/dumps.json`
-  for details — `CISCO-ACCELINK-RTXM228-551-C98`, `CISCO-FTLF1318P3BTL-C1`, and `FS-SFP1G-LX-31`).
-- **`baseUrl` in `Repository.ts`** points at this fork (`posi211/UniFi-SFP-Wizard`) so the live demo
-  below pulls dumps/config from here instead of upstream.
-- Live demo is deployed via GitHub Actions to GitHub Pages: use the `?classic` URL parameter for the
-  clean dark theme (the default "Liquid Glass" theme has a mobile layout bug — text overlap — that's
-  present upstream too).
-- **Added a Local File / Repository / My Backups toggle** above the EEPROM source controls, so only
-  one input is active at a time instead of two overlapping controls.
-- **Fixed the EEPROM Repository dropdown being empty**: it previously called the GitHub REST API
-  (`api.github.com/.../contents/repository`), which is rate-limited to 60 unauthenticated
-  requests/hour per IP and failed silently with no error shown. It now reads `dumps.json` directly
-  from `raw.githubusercontent.com`, which isn't subject to that limit, and surfaces a visible error
-  if the fetch ever does fail.
-- **Fixed washed-out text on `<select>`/`<input>` elements** in the non-classic ("Liquid Glass")
-  theme — `style.css` had duplicate legacy rules referencing undefined CSS variables
-  (`--primary-text`, `--secondary-color`, etc.) with `!important`, silently overriding the correct
-  theme colors. Classic mode was unaffected (it never loads `style.css`).
-- **Added a local backup library ("My Backups")** and made Save-before-Write mandatory — see
-  [Module Backups (Required Before Writing)](#module-backups-required-before-writing) below.
-
----
 # UniFi-SFP-Wizard
 
 This Repository provides a WebGUI for the UniFi SFP-Wizard.
