@@ -7,10 +7,12 @@
     "build": "webpack --mode production",
     "serve": "webpack serve",
     "make": "electron-forge make",
+    "macStore": "electron-builder --mac mas",
     "prestart": "tsc ./app/Electron.ts --outDir ./app",
     "start": "electron ."
   },
   "dependencies": {
+    "@electron/osx-sign": "^2.6.0",
     "@types/i18next": "^12.1.0",
     "@types/web-bluetooth": "^0.0.21",
     "i18next": "^25.7.3",
@@ -30,7 +32,7 @@
     "@types/js-untar": "^2.0.0",
     "@types/pako": "^2.0.4",
     "electron": "^40.6.1",
-    "electron-builder": "^26.0.12",
+    "electron-builder": "^26.15.3",
     "electron-windows-msix": "^2.0.4",
     "ts-loader": "^9.5.4",
     "typescript": "^5.5.3",
@@ -42,7 +44,8 @@
     "copyright": "Copyright © 2026 Jan Heil (www.byte-store.de)",
     "files": [
       "dist/**/*",
-      "build/*"
+      "build/*",
+      "app/**/*"
     ],
     "directories": {
       "output": "packaged"

@@ -3,7 +3,8 @@ module.exports = {
         icon: "./build/icon.png",
         linux: {
             target: 'deb'
-        }
+        },
+        appBundleId: 'de.bytestore.sfpwizard'
     },
     makers: [
         {
@@ -42,12 +43,6 @@ module.exports = {
                 background: './build/appx/SplashScreen.scale-400.png',
                 format: 'ULFO',
                 icon: './build/macos-icon.png'
-            }
-        },
-        {
-            name: '@electron-forge/maker-pkg',
-            config: {
-                identity: 'Developer ID Installer: Jan Heil (XNCBZ327Q3)'
             }
         }
     ]
