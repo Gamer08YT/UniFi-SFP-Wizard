@@ -41,12 +41,18 @@
     "webpack-dev-server": "^5.2.2"
   },
   "build": {
+    "appId": "de.bytestore.sfpwizard",
     "copyright": "Copyright © 2026 Jan Heil (www.byte-store.de)",
     "files": [
       "dist/**/*",
       "build/*",
       "app/**/*"
     ],
+    "mas": {
+        "entitlements": "build/entitlements.mas.plist",
+        "entitlementsInherit": "build/entitlements.mas.inherit.plist",
+        "provisioningProfile": "build/masdist.provisionprofile"
+    },
     "directories": {
       "output": "packaged"
     }
