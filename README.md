@@ -12,6 +12,12 @@ Feel free to contribute to this project.
 
 https://apps.microsoft.com/detail/9nb23j84168c?hl=de-DE&gl=DE
 
+#### MacOS Store
+
+MacOS MAS is currently in review, but you can download the TestFlight Version here:
+
+https://testflight.apple.com/join/RaBhvb2u
+
 ### MacOS, Windows, Debian
 
 Have a look at the Release Page: 
