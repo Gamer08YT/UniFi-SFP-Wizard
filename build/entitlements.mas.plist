@@ -11,5 +11,11 @@
   <!-- Network access (if needed) -->
   <key>com.apple.security.network.client</key>
   <true/>
+  <!-- Allow access Bluetooth (Web Bluetooth API) -->
+  <key>com.apple.security.device.bluetooth</key>
+  <true/>
+  <!-- Allow access to Download Files -->
+  <key>com.apple.security.files.user-selected.read-write</key>
+  <true/>
 </dict>
 </plist>
