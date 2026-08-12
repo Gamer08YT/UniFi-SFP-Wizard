@@ -72,7 +72,7 @@ class Electron {
                 // Send Notification if supported.
                 if(Notification.isSupported()) {
                     const notification = new Notification({
-                       title: "SFP-Wizard",
+                       title: "SFP Wizard",
                         subtitle: "",
                         body: value.text
                     });
