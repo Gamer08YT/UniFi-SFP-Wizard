@@ -15,7 +15,7 @@ module.exports = {
                 packageAssets: 'D:\\Programmieren\\UniFi-SFP-Wizard\\build\\appx',
                 manifestVariables: {
                     publisherDisplayName: 'BYTESTORE',
-                    appDisplayName: "Unofficial SFP Wizard Tool",
+                    appDisplayName: "SFP Tool",
                     packageBackgroundColor: '#131517',
                     publisher: 'CN=555309DB-480B-42F6-B556-988555579009',
                     packageMinOSVersion: "10.0.26100.0",

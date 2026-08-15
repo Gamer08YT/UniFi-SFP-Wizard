@@ -1,4 +1,4 @@
-import $, {now} from "jquery";
+import $ from "jquery";
 import i18next from "i18next";
 import * as enCommon from "./language/en-US.json";
 import * as deCommon from "./language/de-DE.json";
@@ -11,6 +11,7 @@ import {FormatType} from "./FormatType";
 import {Repository} from "./Repository";
 import {BackupStore} from "./BackupStore";
 import untar from "js-untar";
+
 
 class Wizard {
     // Normaly it's UACC-SFP-Wizard don't know why Edge display it as Sfp Wizard.
@@ -475,6 +476,35 @@ class Wizard {
         // Register Log Button.
         Wizard.logButton.on("click", () => {
             this.retrieveLogs();
+        });
+
+        // Register Links.
+        document.addEventListener('DOMContentLoaded', () => {
+            // Select all external Links.
+            const externalLinks: NodeListOf<HTMLAnchorElement> =
+                document.querySelectorAll('a[href^="http"]');
+
+            externalLinks.forEach(link => {
+                link.addEventListener('click', async (e: MouseEvent) => {
+                    e.preventDefault();
+
+                    const url = link.getAttribute('href');
+                    if (!url) {
+                        console.error('Link has no valid href.');
+                        return;
+                    }
+
+                    try {
+                        // @ts-ignore
+                        await window.electronAPI.openExternal(url);
+
+                        console.log(`Successfully opened ${url} in default browser`);
+                    } catch (err: any) {
+                        console.error(`Failed to open ${url}:`, err);
+                        alert(`Could not open link: ${err.message}`);
+                    }
+                });
+            });
         });
     }
 

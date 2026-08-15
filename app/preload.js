@@ -15,5 +15,8 @@ contextBridge.exposeInMainWorld("electronAPI", {
     },
     pushNotification: (type, message) => {
         ipcRenderer.send("notification", {type: type, text: message});
+    },
+    openExternal: (url) => {
+        ipcRenderer.send("open", url);
     }
 });

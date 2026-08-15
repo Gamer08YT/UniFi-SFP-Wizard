@@ -13,8 +13,6 @@
   },
   "dependencies": {
     "@electron/osx-sign": "^2.6.0",
-    "@types/i18next": "^13.0.0",
-    "@types/web-bluetooth": "^0.0.21",
     "i18next": "^26.3.6",
     "jquery": "^4.0.0",
     "js-untar": "^2.0.0",
@@ -22,6 +20,8 @@
     "pako": "^3.0.1"
   },
   "devDependencies": {
+    "@types/i18next": "^13.0.0",
+    "@types/web-bluetooth": "^0.0.21",
     "@electron-forge/cli": "^7.11.2",
     "@electron-forge/maker-deb": "^7.11.2",
     "@electron-forge/maker-dmg": "^7.11.2",
@@ -35,7 +35,7 @@
     "electron-builder": "^26.15.3",
     "electron-windows-msix": "^2.0.4",
     "ts-loader": "^9.6.2",
-    "typescript": "^7.0.2",
+    "typescript": "^5.9.2",
     "webpack": "^5.109.2",
     "webpack-cli": "^7.2.2",
     "webpack-dev-server": "^6.0.0"
@@ -50,9 +50,9 @@
       "app/**/*"
     ],
     "mas": {
-        "entitlements": "build/entitlements.mas.plist",
-        "entitlementsInherit": "build/entitlements.mas.inherit.plist",
-        "provisioningProfile": "build/masdist.provisionprofile"
+      "entitlements": "build/entitlements.mas.plist",
+      "entitlementsInherit": "build/entitlements.mas.inherit.plist",
+      "provisioningProfile": "build/masdist.provisionprofile"
     },
     "directories": {
       "output": "packaged"

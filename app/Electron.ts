@@ -1,5 +1,6 @@
-import {app, BrowserWindow, ipcMain, Notification} from 'electron';
+import {app, BrowserWindow, ipcMain, Notification, shell} from 'electron';
 import * as path from "node:path";
+
 
 class Electron {
     private windowInstance: BrowserWindow | null = null;
@@ -92,6 +93,14 @@ class Electron {
                 }, 1000);
 
             }
+        });
+
+        ipcMain.on("open", (event, url) =>{
+            shell.openExternal(url, {
+                activate: true
+            }).then(() => {
+                console.log(`Successfully opened ${url} in default browser`);
+            });
         });
 
         // Print Debug Message.
