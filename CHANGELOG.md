@@ -5,6 +5,16 @@ All notable changes to this fork (`posi211/UniFi-SFP-Wizard`) are documented her
 This version number tracks the **web app**, not the physical Wizard device's own firmware
 version — they're separate and only coincidentally similar-looking right now.
 
+
+## [Unreleased]
+
+### Added
+
+- **Profile Store (Wizard firmware 1.1.8+)** — a new card that lists the profiles stored on the
+  Wizard's internal storage ("SFP Profile Store"), downloads them as `.uieeprom` files, or copies
+  them into the local Backup Library so they can be used as a write source.
+- New i18n strings for the Profile Store (en-US, de-DE).
+
 ## [1.2.0] - 2026-07-29
 
 ### Added

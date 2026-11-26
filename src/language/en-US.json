@@ -58,5 +58,10 @@
   "backup-required-message": "No local backup found for this module's serial number. Please click \"Save\" first to back it up before writing.",
   "backup-saved-message": "Module EEPROM backed up locally on this device.",
   "backup-read-error": "Unable to verify a backup exists - please read the module again before writing.",
-  "backup-none-found": "No matching backups found."
+  "backup-none-found": "No matching backups found.",
+  "profiles-loaded": "Loaded the profiles stored on the Wizard.",
+  "profiles-empty": "The Wizard's Profile Store is empty.",
+  "profiles-load-failed": "Failed to load the Wizard's Profile Store (requires firmware 1.1.8 or newer).",
+  "profiles-read-failed": "Failed to read the stored profile.",
+  "profiles-placeholder": "No profiles loaded - click \"Load Profiles\" first"
 }

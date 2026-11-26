@@ -53,6 +53,10 @@ https://ubiquiti-networks-forum.de/sfp-wizard/
         - Via Repo
         - Via local Backup Library
     - Save EEPROM (downloads a `.uieeprom` file **and** stores a copy in the local Backup Library)
+    - Profile Store (firmware 1.1.8+)
+        - List the profiles stored on the Wizard's internal storage
+        - Download a stored profile as a `.uieeprom` file
+        - Copy a stored profile into the local Backup Library
 
 Currently, I implemented only the Dump Functions, DDM would be nice too, but you manually have to activate it on the
 Wizard, so I think it's not interesting at the moment.
@@ -89,6 +93,19 @@ number, part number, or vendor to find and restore a module back to its original
 **Limitation:** the Backup Library is local to the specific browser/device you're using. Saving a
 module from your phone won't make that backup visible (or satisfy the write requirement) on your
 laptop, and vice versa — each browser keeps its own separate library.
+
+## Profile Store (Wizard firmware 1.1.8+)
+
+Firmware 1.1.8 lets the Wizard keep module profiles on its internal storage ("SFP Profile Store"
+on the device). The app's **Profile Store** card lists what's on the device and lets you:
+
+1. **Load Profiles** — list the profiles stored on the Wizard (type, part number, serial, size).
+2. **Download .uieeprom** — save a stored profile as a regular `.uieeprom` file.
+3. **Save to My Backups** — copy a stored profile into the local Backup Library, so it can be used
+   as a write source like any other backup.
+
+Uploading or deleting profiles from the app is not implemented yet — use the Wizard's own
+**Copy & Save Profile** to add profiles for now.
 
 ## Contributing
 

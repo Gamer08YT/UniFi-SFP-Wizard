@@ -10,6 +10,7 @@ import {ProtocolType} from "./ProtocolType";
 import {FormatType} from "./FormatType";
 import {Repository} from "./Repository";
 import {BackupStore} from "./BackupStore";
+import {ProfileStore} from "./ProfileStore";
 import untar from "js-untar";
 
 
@@ -42,6 +43,12 @@ class Wizard {
     private static backupGroup: JQuery<HTMLElement>;
     private static backupSearch: JQuery<HTMLElement>;
     private static backupSelect: JQuery<HTMLElement>;
+
+    // Profile Store Elements (Wizard firmware 1.1.8+).
+    private static profileLoadButton: JQuery<HTMLElement>;
+    private static profileSelect: JQuery<HTMLElement>;
+    private static profileDownloadButton: JQuery<HTMLElement>;
+    private static profileBackupButton: JQuery<HTMLElement>;
 
     // Store fetched EEPROM bytes for the currently selected Repository entry.
     private static repoEepromData: Uint8Array | null = null;
@@ -171,10 +178,19 @@ class Wizard {
             // Toggle Eeprom Upload State.
             Wizard.eepromUpload.removeAttr("disabled");
             Wizard.repoSelect.removeAttr("disabled");
+            Wizard.profileSelect.removeAttr("disabled");
         } else {
             // Toggle Eeprom Upload State.
             Wizard.eepromUpload.attr("disabled", "disabled");
             Wizard.repoSelect.attr("disabled", "disabled");
+            Wizard.profileSelect.attr("disabled", "disabled");
+
+            // Reset the Profile Store list.
+            Wizard.profileSelect.empty();
+            Wizard.profileSelect.append(`<option value="" disabled>${i18next.t("common:profiles-placeholder")}</option>`);
+            Wizard.profileDownloadButton.attr("disabled", "disabled");
+            Wizard.profileBackupButton.attr("disabled", "disabled");
+            ProfileStore.reset();
         }
     }
 
@@ -352,6 +368,108 @@ class Wizard {
             }
         });
 
+
+        // Register Profile Store Listeners (Wizard firmware 1.1.8+).
+        Wizard.profileLoadButton.on("click", async () => {
+            Wizard.setLoader(true);
+
+            try {
+                const profiles = await ProfileStore.list();
+
+                // Remove previous entries before populating the fresh list.
+                $("#profile-list option").remove();
+
+                if (profiles.length === 0) {
+                    $("#profile-list").append(`<option value="" disabled>${i18next.t("common:profiles-empty")}</option>`);
+
+                    Wizard.notify(i18next.t("common:profiles-empty"), "info");
+                } else {
+                    profiles.forEach((profile, index) => {
+                        const label = `${profile.partNumber} - ${profile.sn} (${profile.type.toUpperCase()}, ${profile.size} B)`;
+
+                        $("#profile-list").append(`<option value="${index}">${label}</option>`);
+                    });
+
+                    Wizard.notify(i18next.t("common:profiles-loaded"), "success");
+                }
+            } catch (e) {
+                console.warn("Failed to load the Wizard's Profile Store.", e);
+                Wizard.notify(i18next.t("common:profiles-load-failed"), "failure");
+            } finally {
+                Wizard.setLoader(false);
+            }
+        });
+
+        // Enable the profile actions once a stored profile is selected.
+        Wizard.profileSelect.on("change", () => {
+            const index = parseInt(Wizard.profileSelect.val() as string, 10);
+
+            if (isNaN(index)) {
+                Wizard.profileDownloadButton.attr("disabled", "disabled");
+                Wizard.profileBackupButton.attr("disabled", "disabled");
+            } else {
+                Wizard.profileDownloadButton.removeAttr("disabled");
+                Wizard.profileBackupButton.removeAttr("disabled");
+            }
+        });
+
+        // Download the selected stored profile as a .uieeprom file.
+        Wizard.profileDownloadButton.on("click", async () => {
+            const index = parseInt(Wizard.profileSelect.val() as string, 10);
+
+            if (isNaN(index)) return;
+
+            Wizard.setLoader(true);
+
+            try {
+                const bytes = await ProfileStore.read(index);
+
+                // Reuse the module download flow; it names the file from the EEPROM meta.
+                this.downloadStream({body: bytes});
+            } catch (e) {
+                console.warn("Failed to read the stored profile.", e);
+                Wizard.notify(i18next.t("common:profiles-read-failed"), "failure");
+            } finally {
+                Wizard.setLoader(false);
+            }
+        });
+
+        // Copy the selected stored profile into the local backup library.
+        Wizard.profileBackupButton.on("click", async () => {
+            const index = parseInt(Wizard.profileSelect.val() as string, 10);
+
+            if (isNaN(index)) return;
+
+            Wizard.setLoader(true);
+
+            try {
+                const bytes = await ProfileStore.read(index);
+                const meta = Wizard.fetchEEPROM(bytes);
+
+                if (meta.sn && meta.sn !== "-") {
+                    await BackupStore.save({
+                        sn: meta.sn,
+                        partNumber: meta.part,
+                        vendor: meta.vendor,
+                        type: bytes.length === 640 ? "qsfp" : "sfp",
+                        size: bytes.length,
+                        data: bytes
+                    });
+
+                    // Refresh the library list in case it's currently visible.
+                    await this.refreshBackupList(Wizard.backupSearch.val() as string);
+
+                    Wizard.notify(i18next.t("common:backup-saved-message"), "success");
+                } else {
+                    Wizard.notify(i18next.t("common:backup-read-error"), "failure");
+                }
+            } catch (e) {
+                console.warn("Failed to store the profile backup.", e);
+                Wizard.notify(i18next.t("common:profiles-read-failed"), "failure");
+            } finally {
+                Wizard.setLoader(false);
+            }
+        });
         // Register Connect Button Click Listener.
         Wizard.connectButton.on("click", () => {
             if (Wizard.device == null) {
@@ -581,6 +699,15 @@ class Wizard {
         Wizard.backupGroup = $("#sfp-backup-group");
         Wizard.backupSearch = $("#backup-search");
         Wizard.backupSelect = $("#sfp-backup");
+
+        // Profile Store Elements.
+        Wizard.profileLoadButton = $("#load-profiles");
+        Wizard.profileSelect = $("#profile-list");
+        Wizard.profileDownloadButton = $("#download-profile");
+        Wizard.profileBackupButton = $("#profile-to-backup");
+
+        // Bind the Profile Store to the Wizard's BLE API layer.
+        ProfileStore.bind((method, path, bodyObj = {}) => Wizard.sendApiRequest(method, path, bodyObj), () => Wizard.deviceId);
 
         // Load new Theme if Classic Param is not set.
         if (!Wizard.shouldUseClassicTheme()) {

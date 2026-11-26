@@ -178,6 +178,39 @@ The tool connects to your SFP Wizard using the Web Bluetooth API.">
                         <br>
                         <div class="card">
                             <div class="card-body">
+                                <!-- Start: Profile Store -->
+                                <div id="wizard-profiles">
+                                    <h5 class="card-title">Profile Store</h5>
+                                    <p class="card-text">Profiles stored in the Wizard's internal storage (requires
+                                        firmware 1.1.8 or newer).</p>
+
+                                    <div class="mb-3">
+                                        <select class="form-select" id="profile-list" size="6" disabled
+                                                aria-label="Stored profiles">
+                                            <option value="" disabled>No profiles loaded - click "Load Profiles"
+                                                first
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <div class="btn-group needConnected" role="group">
+                                        <button type="button" id="load-profiles" class="btn btn-primary">Load
+                                            Profiles
+                                        </button>
+                                        <button type="button" id="download-profile" disabled class="btn btn-primary">Download
+                                            .uieeprom
+                                        </button>
+                                        <button type="button" id="profile-to-backup" disabled class="btn btn-primary">Save
+                                            to My Backups
+                                        </button>
+                                    </div>
+                                </div>
+                                <!-- End: Profile Store -->
+                            </div>
+                        </div>
+                        <br>
+                        <div class="card">
+                            <div class="card-body">
                                 <!-- Start: Wizard Log -->
                                 <div id="wizard-log">
                                     <h5 class="card-title">Wizard Log</h5>

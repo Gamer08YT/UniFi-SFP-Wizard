@@ -58,5 +58,10 @@
   "backup-required-message": "Für die Seriennummer dieses Moduls wurde kein lokales Backup gefunden. Bitte zuerst auf \"Speichern\" klicken, um ein Backup zu erstellen.",
   "backup-saved-message": "Modul-EEPROM wurde lokal auf diesem Gerät gesichert.",
   "backup-read-error": "Backup konnte nicht überprüft werden - bitte das Modul erneut auslesen, bevor geschrieben wird.",
-  "backup-none-found": "Keine passenden Backups gefunden."
+  "backup-none-found": "Keine passenden Backups gefunden.",
+  "profiles-loaded": "Auf dem Wizard gespeicherte Profile geladen.",
+  "profiles-empty": "Der Profil-Speicher des Wizards ist leer.",
+  "profiles-load-failed": "Profil-Speicher des Wizards konnte nicht geladen werden (erfordert Firmware 1.1.8 oder neuer).",
+  "profiles-read-failed": "Gespeichertes Profil konnte nicht gelesen werden.",
+  "profiles-placeholder": "Keine Profile geladen - zuerst \"Profile laden\" klicken"
 }
