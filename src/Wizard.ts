@@ -303,6 +303,13 @@ class Wizard {
                 // Clear whatever the other two sources had selected.
                 (Wizard.eepromUpload[0] as HTMLInputElement).value = "";
                 Wizard.backupEepromData = null;
+
+                // Lazy retry: the first load can fail (e.g. the GitHub API
+                // rate limit on mobile networks); refetch when the user
+                // opens this source.
+                if ($("#sfp-repo option").length < 3) {
+                    Repository.fetchTemplates();
+                }
             }
         });
 
@@ -334,7 +341,7 @@ class Wizard {
             }
 
             try {
-                const url = `https://raw.githubusercontent.com/posi211/UniFi-SFP-Wizard/master/repository/${filename}`;
+                const url = Repository.getFileUrl(filename);
                 const response = await fetch(url);
 
                 if (!response.ok) {
@@ -498,6 +505,11 @@ class Wizard {
         // Upload multiple repository profiles to the Wizard's Profile Store in
         // one session (merged with the currently stored profiles).
         Wizard.profileRepoUploadButton.on("click", async () => {
+            // Lazy retry if the listing failed to load earlier.
+            if ($("#profile-repo-list option").length < 2) {
+                await Repository.fetchTemplates();
+            }
+
             const filenames = (Wizard.profileRepoList.val() as string[] | null) ?? [];
 
             if (filenames.length === 0) {
@@ -520,7 +532,7 @@ class Wizard {
                             // Guard against placeholder options without a file name.
                             if (!filename.endsWith(".uieeprom")) continue;
 
-                            const response = await fetch(`https://raw.githubusercontent.com/posi211/UniFi-SFP-Wizard/master/repository/${filename}`);
+                            const response = await fetch(Repository.getFileUrl(filename));
 
                             if (!response.ok) {
                                 throw new Error(`HTTP ${response.status} fetching ${filename}`);

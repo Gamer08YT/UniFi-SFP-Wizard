@@ -70,5 +70,6 @@
   "profiles-upload-failed": "Profil konnte nicht auf den Wizard hochgeladen werden (erfordert Firmware 1.1.8 oder neuer).",
   "profiles-upload-invalid": "Ungültiger EEPROM-Dump - nur SFP- (512 Byte) und QSFP-Snapshots (640 Byte) können hochgeladen werden.",
   "profiles-repo-none-selected": "Wähle mindestens ein Profil aus der Repository-Liste.",
-  "load": "Laden"
+  "load": "Laden",
+  "repository-unavailable": "Repository vorübergehend nicht verfügbar - Liste erneut öffnen, um es erneut zu versuchen."
 }
