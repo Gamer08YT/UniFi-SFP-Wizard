@@ -136,11 +136,18 @@ export class ProfileStore {
     /**
      * Uploads an EEPROM snapshot into the Wizard's internal Profile Store.
      *
-     * The upload flow mirrors the module write flow (start with the snapshot
-     * size, then send the bytes as a raw request body). Unlike the list/read
-     * endpoints, the favorites upload handlers have only been inferred from
-     * the 1.1.8 firmware image, not confirmed on a device yet - callers should
-     * be prepared for this to fail on some firmware versions.
+     * The firmware parses an upload session that announces the size(s) of the
+     * file(s) about to be sent (log strings: "No more files expected",
+     * "index:%d, received %d/%d"), so we start the session with the snapshot
+     * size and then send the bytes as a raw request body, mirroring the
+     * module write flow (/xsfp/sync/*).
+     *
+     * The favorites upload handlers have only been inferred from the 1.1.8
+     * firmware image, not confirmed on a device yet. Two start-body shapes are
+     * attempted: {"sizes":[N]} (multi-file session, matches the firmware's
+     * "sizes" JSON key) and, as a fallback, {"size":N} (same key the module
+     * write flow uses). Failures are reported with the firmware's response
+     * status so they can be debugged from the Wizard Log.
      *
      * @param {Uint8Array} data - The EEPROM snapshot to store (SFP 512 or QSFP 640 bytes).
      * @return {Promise<void>} A promise that resolves once the snapshot has been sent.
@@ -153,29 +160,46 @@ export class ProfileStore {
             throw new Error("ProfileStore is not bound to a Wizard.");
         }
 
-        // Abort any stale upload session (best effort: a firmware without the
-        // favorites handlers fails here and the error is ignored).
-        try {
-            await sender("POST", ProfileStore.path("/xsfp/favorites/cancel"));
-        } catch (e) {
-            console.debug("favorites/cancel before upload failed (ignorable).", e);
+        const startBodies: any[] = [{sizes: [data.length]}, {size: data.length}];
+        let lastError = "unknown error";
+
+        for (const startBody of startBodies) {
+            // Abort any stale upload session (best effort: a firmware without
+            // the favorites handlers fails here and the error is ignored).
+            try {
+                await sender("POST", ProfileStore.path("/xsfp/favorites/cancel"));
+            } catch (e) {
+                console.debug("favorites/cancel before upload failed (ignorable).", e);
+            }
+
+            // Start the upload session, announcing the snapshot size.
+            const startResp = await sender("POST", ProfileStore.path("/xsfp/favorites/start"), startBody);
+            const startHeader = (startResp as any).header;
+            const startStatus = startHeader?.statusCode;
+
+            if (startStatus !== undefined && startStatus !== 200) {
+                lastError = `favorites/start ${JSON.stringify(startBody)} -> HTTP ${startStatus}`;
+
+                console.warn(lastError, "response:", startResp);
+                continue;
+            }
+
+            // Send the snapshot bytes as a raw request body (same pattern as /xsfp/sync/data).
+            const dataResp = await senderRaw("POST", ProfileStore.path("/xsfp/favorites/data"), data);
+            const dataHeader = (dataResp as any).header;
+            const dataStatus = dataHeader?.statusCode;
+
+            if (dataStatus !== undefined && dataStatus !== 200) {
+                lastError = `favorites/data -> HTTP ${dataStatus}`;
+
+                console.warn(lastError, "response:", dataResp);
+                continue;
+            }
+
+            return;
         }
 
-        // Start the upload session with the snapshot size.
-        const startResp = await sender("POST", ProfileStore.path("/xsfp/favorites/start"), {size: data.length});
-        const startBody = (startResp as any).body;
-
-        if (startBody && startBody.statusCode !== undefined && startBody.statusCode !== 200) {
-            throw new Error(`favorites/start failed with status ${startBody.statusCode}.`);
-        }
-
-        // Send the snapshot bytes as a raw request body (same pattern as /xsfp/sync/data).
-        const dataResp = await senderRaw("POST", ProfileStore.path("/xsfp/favorites/data"), data);
-        const header = (dataResp as any).header;
-
-        if (header && header.statusCode !== undefined && header.statusCode !== 200) {
-            throw new Error(`favorites/data failed with status ${header.statusCode}.`);
-        }
+        throw new Error(lastError);
     }
 
     /**

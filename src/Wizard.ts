@@ -478,7 +478,8 @@ class Wizard {
                         await this.loadProfiles();
                     } catch (e) {
                         console.warn("Failed to upload the profile to the Wizard.", e);
-                        Wizard.notify(i18next.t("common:profiles-upload-failed"), "failure");
+
+                        Wizard.notify((i18next.t("common:profiles-upload-failed") as string) + " (" + (e as Error).message + ")", "failure");
                     } finally {
                         Wizard.setLoader(false);
                     }
