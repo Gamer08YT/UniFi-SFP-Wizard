@@ -1478,6 +1478,9 @@ class Wizard {
 
         const [id, seq] = Wizard.nextRequestId();
 
+
+        // Log the outgoing request in the Wizard Log (the log already shows responses).
+        Wizard.setLog(`${method} ${path} ${JSON.stringify(bodyObj)}`, false);
         const req: APIRequest = {
             type: "httpRequest",
             id,
@@ -2070,6 +2073,9 @@ class Wizard {
         // Print Debug Message.
         console.log(`Sending RAW API Request: ${method} ${path}`);
 
+
+        // Log the outgoing raw request in the Wizard Log (the log already shows responses).
+        Wizard.setLog(`${method} ${path} <raw ${rawBody.length} bytes>`, false);
         // Get new ID.
         const [id, seq] = Wizard.nextRequestId();
 
