@@ -17,6 +17,8 @@ version — they're separate and only coincidentally similar-looking right now.
   The BLE upload is a bulk-replace session, so the app merges: it re-sends the profiles already
   stored on the device together with the new one (upload flow confirmed on a device running
   v1.1.8).
+- Repository multi-upload — the Profile Store card gains a multi-select list of the community
+  Repository profiles, so several EEPROMs can be added to the Wizard's storage in one session.
 - New i18n strings for the Profile Store (en-US, de-DE).
 
 ## [1.2.0] - 2026-07-29

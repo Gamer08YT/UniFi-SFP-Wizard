@@ -28,12 +28,14 @@ export class Repository {
                 // Remove the static placeholder options (e.g. "Todo") that ship in the
                 // markup, keeping only the leading "Select EEPROM Config" prompt.
                 $("#sfp-repo option[value]").remove();
+                $("#profile-repo-list option").remove();
 
                 // @ts-ignore
                 data.forEach(element => {
                     if (element.name.endsWith(".uieeprom")) {
                         const label = nameByFile[element.name] || element.name.replace(".uieeprom", "");
-                        $("#sfp-repo").append(`<option value="${element.name}">${label}</option>`)
+                        $("#sfp-repo").append(`<option value="${element.name}">${label}</option>`);
+                        $("#profile-repo-list").append(`<option value="${element.name}">${label}</option>`);
                     }
                 })
 

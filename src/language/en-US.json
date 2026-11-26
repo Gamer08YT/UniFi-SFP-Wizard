@@ -68,5 +68,6 @@
   "profiles-upload-message": "Add the selected EEPROM profile to the Wizard's internal Profile Store? The app re-uploads the profiles already stored on the device together with the new one (the BLE upload replaces the whole store).",
   "profiles-uploaded": "Profile uploaded - the Wizard's Profile Store now holds {{n}} profiles.",
   "profiles-upload-failed": "Failed to upload the profile to the Wizard (requires firmware 1.1.8 or newer).",
-  "profiles-upload-invalid": "Invalid EEPROM dump - only SFP (512 byte) and QSFP (640 byte) snapshots can be uploaded."
+  "profiles-upload-invalid": "Invalid EEPROM dump - only SFP (512 byte) and QSFP (640 byte) snapshots can be uploaded.",
+  "profiles-repo-none-selected": "Select at least one profile from the repository list."
 }

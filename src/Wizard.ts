@@ -50,6 +50,8 @@ class Wizard {
     private static profileDownloadButton: JQuery<HTMLElement>;
     private static profileBackupButton: JQuery<HTMLElement>;
     private static profileUploadButton: JQuery<HTMLElement>;
+    private static profileRepoList: JQuery<HTMLElement>;
+    private static profileRepoUploadButton: JQuery<HTMLElement>;
 
     // Store fetched EEPROM bytes for the currently selected Repository entry.
     private static repoEepromData: Uint8Array | null = null;
@@ -180,11 +182,13 @@ class Wizard {
             Wizard.eepromUpload.removeAttr("disabled");
             Wizard.repoSelect.removeAttr("disabled");
             Wizard.profileSelect.removeAttr("disabled");
+            Wizard.profileRepoList.removeAttr("disabled");
         } else {
             // Toggle Eeprom Upload State.
             Wizard.eepromUpload.attr("disabled", "disabled");
             Wizard.repoSelect.attr("disabled", "disabled");
             Wizard.profileSelect.attr("disabled", "disabled");
+            Wizard.profileRepoList.attr("disabled", "disabled");
 
             // Reset the Profile Store list.
             Wizard.profileSelect.empty();
@@ -451,6 +455,9 @@ class Wizard {
         // Upload the selected EEPROM profile to the Wizard's Profile Store.
         // The BLE upload is a bulk-replace session: the currently stored
         // profiles are read first and sent again together with the new one.
+        // Upload the selected EEPROM profile to the Wizard's Profile Store.
+        // The BLE upload is a bulk-replace session: the currently stored
+        // profiles are read first and sent again together with the new one.
         Wizard.profileUploadButton.on("click", async () => {
             const bytes = await this.readFile();
 
@@ -473,40 +480,66 @@ class Wizard {
                     Wizard.setLoader(true);
 
                     try {
-                        const existing = await ProfileStore.list();
-                        const files: Uint8Array[] = [];
-                        const newType = bytes.length === 640 ? "qsfp" : "sfp";
-                        const newMeta = Wizard.fetchEEPROM(bytes);
-                        const newKey = `${newType}|${newMeta.part}|${newMeta.sn}`;
-
-                        let replaced = false;
-
-                        for (let i = 0; i < existing.length; i++) {
-                            const stored = await ProfileStore.read(i);
-                            const storedKey = `${existing[i].type}|${existing[i].partNumber}|${existing[i].sn}`;
-
-                            if (storedKey === newKey) {
-                                // A profile with the same type/part/serial is
-                                // re-uploaded with the new bytes.
-                                files.push(bytes);
-                                replaced = true;
-                            } else {
-                                files.push(stored);
-                            }
-                        }
-
-                        if (!replaced) {
-                            files.push(bytes);
-                        }
-
-                        await ProfileStore.uploadAll(files);
-
-                        Wizard.notify((i18next.t("common:profiles-uploaded", {n: files.length}) as string), "success");
-
-                        // Refresh the stored profile list.
-                        await this.loadProfiles();
+                        await this.mergeAndUpload([bytes]);
                     } catch (e) {
                         console.warn("Failed to upload the profile to the Wizard.", e);
+
+                        Wizard.notify((i18next.t("common:profiles-upload-failed") as string) + " (" + (e as Error).message + ")", "failure");
+                    } finally {
+                        Wizard.setLoader(false);
+                    }
+                }
+            );
+        });
+
+        // Upload multiple repository profiles to the Wizard's Profile Store in
+        // one session (merged with the currently stored profiles).
+        Wizard.profileRepoUploadButton.on("click", async () => {
+            const filenames = (Wizard.profileRepoList.val() as string[] | null) ?? [];
+
+            if (filenames.length === 0) {
+                Wizard.notify(i18next.t("common:profiles-repo-none-selected"), "failure");
+                return;
+            }
+
+            Confirm.show(
+                i18next.t("common:profiles-upload-title"),
+                i18next.t("common:profiles-upload-message"),
+                i18next.t("common:yes"),
+                i18next.t("common:no"),
+                async () => {
+                    Wizard.setLoader(true);
+
+                    try {
+                        const selected: Uint8Array[] = [];
+
+                        for (const filename of filenames) {
+                            // Guard against placeholder options without a file name.
+                            if (!filename.endsWith(".uieeprom")) continue;
+
+                            const response = await fetch(`https://raw.githubusercontent.com/posi211/UniFi-SFP-Wizard/master/repository/${filename}`);
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status} fetching ${filename}`);
+                            }
+
+                            const bytes = new Uint8Array(await response.arrayBuffer());
+
+                            if (bytes.length !== 512 && bytes.length !== 640) {
+                                throw new Error(`Invalid snapshot size ${bytes.length} in ${filename}`);
+                            }
+
+                            selected.push(bytes);
+                        }
+
+                        if (selected.length === 0) {
+                            Wizard.notify(i18next.t("common:profiles-repo-none-selected"), "failure");
+                            return;
+                        }
+
+                        await this.mergeAndUpload(selected);
+                    } catch (e) {
+                        console.warn("Failed to upload the repository profiles to the Wizard.", e);
 
                         Wizard.notify((i18next.t("common:profiles-upload-failed") as string) + " (" + (e as Error).message + ")", "failure");
                     } finally {
@@ -751,6 +784,8 @@ class Wizard {
         Wizard.profileDownloadButton = $("#download-profile");
         Wizard.profileBackupButton = $("#profile-to-backup");
         Wizard.profileUploadButton = $("#upload-profile");
+        Wizard.profileRepoList = $("#profile-repo-list");
+        Wizard.profileRepoUploadButton = $("#upload-repo-profiles");
 
         // Bind the Profile Store to the Wizard's BLE API layer.
         ProfileStore.bind(
@@ -2245,6 +2280,44 @@ class Wizard {
         } finally {
             Wizard.setLoader(false);
         }
+    }
+
+    /**
+     * Merges the given EEPROM snapshots into the Wizard's Profile Store and
+     * uploads everything in one bulk-replace session: the currently stored
+     * profiles are read first and sent again together with the new ones
+     * (a stored profile with the same type/part number/serial is replaced by
+     * the new version).
+     *
+     * @param {Uint8Array[]} selected - The EEPROM snapshots to add or update.
+     * @return {Promise<void>} A promise that resolves once the store has been rewritten.
+     */
+    private async mergeAndUpload(selected: Uint8Array[]): Promise<void> {
+        const byKey = new Map<string, Uint8Array>();
+
+        for (const bytes of selected) {
+            const type = bytes.length === 640 ? "qsfp" : "sfp";
+            const meta = Wizard.fetchEEPROM(bytes);
+
+            byKey.set(`${type}|${meta.part}|${meta.sn}`, bytes);
+        }
+
+        const existing = await ProfileStore.list();
+
+        for (let i = 0; i < existing.length; i++) {
+            const key = `${existing[i].type}|${existing[i].partNumber}|${existing[i].sn}`;
+
+            if (!byKey.has(key)) {
+                byKey.set(key, await ProfileStore.read(i));
+            }
+        }
+
+        await ProfileStore.uploadAll(Array.from(byKey.values()));
+
+        Wizard.notify((i18next.t("common:profiles-uploaded", {n: byKey.size}) as string), "success");
+
+        // Refresh the stored profile list.
+        await this.loadProfiles();
     }
 
     /**

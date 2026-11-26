@@ -109,6 +109,9 @@ on the device). The app's **Profile Store** card lists what's on the device and 
    bulk-replace session, so the app first downloads the profiles already stored on the device and
    sends everything back in one session — a stored profile with the same type, part number and
    serial number is replaced by the new version.
+5. **Upload Selected to Wizard** — the Profile Store card also has a multi-select list of the
+   community Repository profiles: Ctrl+click (Cmd+click) to pick several and add them all to the
+   Wizard's storage in one session.
 
 > **Note:** the upload flow was reverse-engineered from the 1.1.8 firmware image and confirmed on
 > a device running v1.1.8. Since the device ends up storing exactly the uploaded set, don't
