@@ -323,6 +323,20 @@ input[disabled], select[disabled] {
     -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
 }
 
+/* Confirm / Report text (Notiflix defaults to dark text: invisible on the glass theme) */
+.notiflix-confirm-title,
+.notiflix-confirm-text,
+.notiflix-report-title,
+.notiflix-report-text {
+    color: rgba(255, 255, 255, .92) !important;
+}
+
+/* Confirm / Report buttons: keep labels readable on the glass buttons */
+.notiflix-confirm-buttons button,
+.notiflix-report-buttons button {
+    color: #ffffff !important;
+}
+
 /* Modal overlay (backdrop) */
 .notiflix-confirm-overlay,
 .notiflix-report-overlay,
