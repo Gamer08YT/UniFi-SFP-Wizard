@@ -208,6 +208,10 @@ export class ProfileStore {
     private static path(suffix: string): string {
         const macProvider = ProfileStore.macProvider;
 
-        return `/api/1.0/${macProvider}${suffix}`;
+        if (macProvider === null) {
+            throw new Error("ProfileStore is not bound to a Wizard.");
+        }
+
+        return `/api/1.0/${macProvider()}${suffix}`;
     }
 }
