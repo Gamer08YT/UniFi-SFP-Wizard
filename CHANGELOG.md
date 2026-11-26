@@ -12,9 +12,11 @@ version — they're separate and only coincidentally similar-looking right now.
 
 - **Profile Store (Wizard firmware 1.1.8+)** — a new card that lists the profiles stored on the
   Wizard's internal storage ("SFP Profile Store"), downloads them as `.uieeprom` files, copies
-  them into the local Backup Library so they can be used as a write source, and uploads the
-  currently selected profile (Local File / Repository / My Backups) to the Wizard's storage
-  (experimental: upload endpoints inferred from the firmware, not confirmed on a device yet).
+  them into the local Backup Library so they can be used as a write source, and adds the
+  currently selected profile (Local File / Repository / My Backups) to the Wizard's storage.
+  The BLE upload is a bulk-replace session, so the app merges: it re-sends the profiles already
+  stored on the device together with the new one (upload flow confirmed on a device running
+  v1.1.8).
 - New i18n strings for the Profile Store (en-US, de-DE).
 
 ## [1.2.0] - 2026-07-29

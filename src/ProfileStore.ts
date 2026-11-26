@@ -134,25 +134,24 @@ export class ProfileStore {
     }
 
     /**
-     * Uploads an EEPROM snapshot into the Wizard's internal Profile Store.
+     * Uploads the full contents of the Wizard's internal Profile Store in a
+     * single session.
      *
-     * The firmware parses an upload session that announces the size(s) of the
-     * file(s) about to be sent (log strings: "No more files expected",
-     * "index:%d, received %d/%d"), so we start the session with the snapshot
-     * size and then send the bytes as a raw request body, mirroring the
-     * module write flow (/xsfp/sync/*).
+     * The BLE upload is a bulk operation: a session announces the size of
+     * every file it is going to send ({"sizes":[...]}), then streams one raw
+     * request body per file, and the firmware ends up storing exactly the
+     * uploaded set - profiles that were on the device but are not part of the
+     * session are gone (confirmed on a device running v1.1.8). Callers that
+     * want to ADD a profile must first read the currently stored ones and
+     * pass them here together with the new one.
      *
-     * The favorites upload handlers have only been inferred from the 1.1.8
-     * firmware image, not confirmed on a device yet. Two start-body shapes are
-     * attempted: {"sizes":[N]} (multi-file session, matches the firmware's
-     * "sizes" JSON key) and, as a fallback, {"size":N} (same key the module
-     * write flow uses). Failures are reported with the firmware's response
-     * status so they can be debugged from the Wizard Log.
+     * Failures are reported with the firmware's response status so they can
+     * be debugged from the Wizard Log.
      *
-     * @param {Uint8Array} data - The EEPROM snapshot to store (SFP 512 or QSFP 640 bytes).
-     * @return {Promise<void>} A promise that resolves once the snapshot has been sent.
+     * @param {Uint8Array[]} files - The EEPROM snapshots to store, in order (SFP 512 or QSFP 640 bytes).
+     * @return {Promise<void>} A promise that resolves once the whole session has been sent.
      */
-    public static async upload(data: Uint8Array): Promise<void> {
+    public static async uploadAll(files: Uint8Array[]): Promise<void> {
         const sender = ProfileStore.sender;
         const senderRaw = ProfileStore.senderRaw;
 
@@ -160,46 +159,37 @@ export class ProfileStore {
             throw new Error("ProfileStore is not bound to a Wizard.");
         }
 
-        const startBodies: any[] = [{sizes: [data.length]}, {size: data.length}];
-        let lastError = "unknown error";
-
-        for (const startBody of startBodies) {
-            // Abort any stale upload session (best effort: a firmware without
-            // the favorites handlers fails here and the error is ignored).
-            try {
-                await sender("POST", ProfileStore.path("/xsfp/favorites/cancel"));
-            } catch (e) {
-                console.debug("favorites/cancel before upload failed (ignorable).", e);
-            }
-
-            // Start the upload session, announcing the snapshot size.
-            const startResp = await sender("POST", ProfileStore.path("/xsfp/favorites/start"), startBody);
-            const startHeader = (startResp as any).header;
-            const startStatus = startHeader?.statusCode;
-
-            if (startStatus !== undefined && startStatus !== 200) {
-                lastError = `favorites/start ${JSON.stringify(startBody)} -> HTTP ${startStatus}`;
-
-                console.warn(lastError, "response:", startResp);
-                continue;
-            }
-
-            // Send the snapshot bytes as a raw request body (same pattern as /xsfp/sync/data).
-            const dataResp = await senderRaw("POST", ProfileStore.path("/xsfp/favorites/data"), data);
-            const dataHeader = (dataResp as any).header;
-            const dataStatus = dataHeader?.statusCode;
-
-            if (dataStatus !== undefined && dataStatus !== 200) {
-                lastError = `favorites/data -> HTTP ${dataStatus}`;
-
-                console.warn(lastError, "response:", dataResp);
-                continue;
-            }
-
-            return;
+        if (files.length === 0) {
+            throw new Error("No profiles to upload.");
         }
 
-        throw new Error(lastError);
+        // Abort any stale upload session (best effort: a firmware without the
+        // favorites handlers fails here and the error is ignored).
+        try {
+            await sender("POST", ProfileStore.path("/xsfp/favorites/cancel"));
+        } catch (e) {
+            console.debug("favorites/cancel before upload failed (ignorable).", e);
+        }
+
+        // Start the upload session, announcing the size of every file.
+        const startResp = await sender("POST", ProfileStore.path("/xsfp/favorites/start"), {sizes: files.map(f => f.length)});
+        const startStatus = (startResp as any).header?.statusCode;
+
+        if (startStatus !== undefined && startStatus !== 200) {
+            throw new Error(`favorites/start -> HTTP ${startStatus}`);
+        }
+
+        // Stream the snapshot bytes, one raw request body per file, in the
+        // same order as the announced sizes (the firmware logs
+        // "index:%d, received %d/%d" and answers {"offset":0,"chunk":N,"index":i+1}).
+        for (const file of files) {
+            const dataResp = await senderRaw("POST", ProfileStore.path("/xsfp/favorites/data"), file);
+            const dataStatus = (dataResp as any).header?.statusCode;
+
+            if (dataStatus !== undefined && dataStatus !== 200) {
+                throw new Error(`favorites/data -> HTTP ${dataStatus}`);
+            }
+        }
     }
 
     /**

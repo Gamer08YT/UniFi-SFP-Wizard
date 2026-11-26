@@ -65,8 +65,8 @@
   "profiles-read-failed": "Failed to read the stored profile.",
   "profiles-placeholder": "No profiles loaded - click \"Load Profiles\" first",
   "profiles-upload-title": "Upload to Profile Store",
-  "profiles-upload-message": "Upload the selected EEPROM profile to the Wizard's internal Profile Store? This uses firmware 1.1.8 endpoints that have not been fully confirmed yet.",
-  "profiles-uploaded": "Profile uploaded to the Wizard's Profile Store.",
+  "profiles-upload-message": "Add the selected EEPROM profile to the Wizard's internal Profile Store? The app re-uploads the profiles already stored on the device together with the new one (the BLE upload replaces the whole store).",
+  "profiles-uploaded": "Profile uploaded - the Wizard's Profile Store now holds {{n}} profiles.",
   "profiles-upload-failed": "Failed to upload the profile to the Wizard (requires firmware 1.1.8 or newer).",
   "profiles-upload-invalid": "Invalid EEPROM dump - only SFP (512 byte) and QSFP (640 byte) snapshots can be uploaded."
 }

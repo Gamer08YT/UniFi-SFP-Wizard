@@ -65,8 +65,8 @@
   "profiles-read-failed": "Gespeichertes Profil konnte nicht gelesen werden.",
   "profiles-placeholder": "Keine Profile geladen - zuerst \"Profile laden\" klicken",
   "profiles-upload-title": "In den Profil-Speicher hochladen",
-  "profiles-upload-message": "Das ausgewählte EEPROM-Profil in den internen Profil-Speicher des Wizards hochladen? Dies nutzt Firmware-1.1.8-Endpunkte, die noch nicht vollständig bestätigt sind.",
-  "profiles-uploaded": "Profil in den Profil-Speicher des Wizards hochgeladen.",
+  "profiles-upload-message": "Das ausgewählte EEPROM-Profil in den internen Profil-Speicher des Wizards aufnehmen? Die App lädt die bereits gespeicherten Profile zusammen mit dem neuen hoch (der BLE-Upload ersetzt den gesamten Speicher).",
+  "profiles-uploaded": "Profil hochgeladen - der Profil-Speicher des Wizards enthält jetzt {{n}} Profile.",
   "profiles-upload-failed": "Profil konnte nicht auf den Wizard hochgeladen werden (erfordert Firmware 1.1.8 oder neuer).",
   "profiles-upload-invalid": "Ungültiger EEPROM-Dump - nur SFP- (512 Byte) und QSFP-Snapshots (640 Byte) können hochgeladen werden."
 }

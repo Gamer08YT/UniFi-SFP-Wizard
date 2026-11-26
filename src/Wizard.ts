@@ -448,6 +448,9 @@ class Wizard {
 
 
         // Upload the selected EEPROM profile to the Wizard's Profile Store.
+        // Upload the selected EEPROM profile to the Wizard's Profile Store.
+        // The BLE upload is a bulk-replace session: the currently stored
+        // profiles are read first and sent again together with the new one.
         Wizard.profileUploadButton.on("click", async () => {
             const bytes = await this.readFile();
 
@@ -470,9 +473,35 @@ class Wizard {
                     Wizard.setLoader(true);
 
                     try {
-                        await ProfileStore.upload(bytes);
+                        const existing = await ProfileStore.list();
+                        const files: Uint8Array[] = [];
+                        const newType = bytes.length === 640 ? "qsfp" : "sfp";
+                        const newMeta = Wizard.fetchEEPROM(bytes);
+                        const newKey = `${newType}|${newMeta.part}|${newMeta.sn}`;
 
-                        Wizard.notify(i18next.t("common:profiles-uploaded"), "success");
+                        let replaced = false;
+
+                        for (let i = 0; i < existing.length; i++) {
+                            const stored = await ProfileStore.read(i);
+                            const storedKey = `${existing[i].type}|${existing[i].partNumber}|${existing[i].sn}`;
+
+                            if (storedKey === newKey) {
+                                // A profile with the same type/part/serial is
+                                // re-uploaded with the new bytes.
+                                files.push(bytes);
+                                replaced = true;
+                            } else {
+                                files.push(stored);
+                            }
+                        }
+
+                        if (!replaced) {
+                            files.push(bytes);
+                        }
+
+                        await ProfileStore.uploadAll(files);
+
+                        Wizard.notify((i18next.t("common:profiles-uploaded", {n: files.length}) as string), "success");
 
                         // Refresh the stored profile list.
                         await this.loadProfiles();
