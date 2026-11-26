@@ -79,6 +79,13 @@ export class ProfileStore {
     }
 
     /**
+     * Returns the last fetched profile list without re-querying the device.
+     */
+    public static stored(): StoredProfile[] {
+        return ProfileStore.profiles;
+    }
+
+    /**
      * Reads the full EEPROM snapshot of the stored profile at the given index.
      * The firmware serves the snapshot in chunks of binary response bodies.
      *

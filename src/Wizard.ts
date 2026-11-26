@@ -13,6 +13,7 @@ import {BackupStore} from "./BackupStore";
 import {ProfileStore} from "./ProfileStore";
 import untar from "js-untar";
 
+import {moduleTypeLabel} from "./ModuleType";
 
 class Wizard {
     // Normaly it's UACC-SFP-Wizard don't know why Edge display it as Sfp Wizard.
@@ -2157,7 +2158,7 @@ class Wizard {
 
             records.forEach(r => {
                 const date = new Date(r.savedAt).toLocaleString();
-                const label = `${r.partNumber} — ${r.sn} (${r.vendor}, saved ${date})`;
+                const label = `${r.partNumber} — ${r.sn} (${r.vendor}, ${moduleTypeLabel(r.data)}, saved ${date})`;
                 Wizard.backupSelect.append(`<option value="${r.id}">${label}</option>`);
             });
         } catch (e) {
@@ -2331,6 +2332,10 @@ class Wizard {
                 });
 
                 Wizard.notify(i18next.t("common:profiles-loaded"), "success");
+
+                    // Enrich the entries with the precise module type
+                    // (SFP/SFP+/SFP28, media) read from the profile bytes.
+                    this.enrichProfileList();
             }
         } catch (e) {
             console.warn("Failed to load the Wizard's Profile Store.", e);
@@ -2376,6 +2381,29 @@ class Wizard {
 
         // Refresh the stored profile list.
         await this.loadProfiles();
+    }
+
+    /**
+     * Replaces the generic type (sfp/qsfp) in the Profile Store list entries
+     * with the precise module type read from the profile bytes (e.g.
+     * "SFP28 · MM 850nm"). Runs sequentially in the background: one BLE
+     * read per entry; entries keep their generic label on failure.
+     */
+    private async enrichProfileList(): Promise<void> {
+        const profiles = ProfileStore.stored();
+
+        for (let index = 0; index < profiles.length; index++) {
+            try {
+                const bytes = await ProfileStore.read(index);
+                const type = moduleTypeLabel(bytes);
+                const $option = $(`#profile-list option[value="${index}"]`);
+                const label = $option.text().replace(/\([^)]*\)$/, `(${type}, ${bytes.length} B)`);
+
+                $option.text(label);
+            } catch (e) {
+                console.warn(`Failed to enrich profile #${index} label.`, e);
+            }
+        }
     }
 
     /**

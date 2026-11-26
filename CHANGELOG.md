@@ -19,6 +19,10 @@ version — they're separate and only coincidentally similar-looking right now.
   v1.1.8).
 - Repository multi-upload — the Profile Store card gains a multi-select list of the community
   Repository profiles, so several EEPROMs can be added to the Wizard's storage in one session.
+- Module type labels — Profile Store, My Backups and Repository list entries now show the module
+  type read from the EEPROM bytes (SFF-8472/SFF-8636 fields: identifier, connector, wavelength,
+  link lengths, nominal bit rate), e.g. "SFP+ · SM 1310nm", "SFP28 · MM 850nm", "SFP · RJ45",
+  "QSFP28 (100G)". Fields the snapshot does not declare are simply omitted.
 - New i18n strings for the Profile Store (en-US, de-DE).
 
 ## [1.2.0] - 2026-07-29

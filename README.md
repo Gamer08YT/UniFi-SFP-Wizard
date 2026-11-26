@@ -58,6 +58,7 @@ https://ubiquiti-networks-forum.de/sfp-wizard/
         - Download a stored profile as a `.uieeprom` file
         - Copy a stored profile into the local Backup Library
         - Add the selected profile to the Wizard's internal storage (merged with what's already stored)
+        - List entries show the module type read from the EEPROM bytes (SFP/SFP+/SFP28, media: SM/MM/RJ45)
 
 Currently, I implemented only the Dump Functions, DDM would be nice too, but you manually have to activate it on the
 Wizard, so I think it's not interesting at the moment.

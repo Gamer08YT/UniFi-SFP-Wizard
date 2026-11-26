@@ -1,5 +1,6 @@
 import $ from "jquery";
 import i18next from "i18next";
+import {moduleTypeLabel} from "./ModuleType";
 
 export class Repository {
     // Store Base URL.
@@ -124,6 +125,11 @@ export class Repository {
                 $("#profile-repo-list").append(`<option value="${name}">${label}</option>`);
             });
 
+            // Best-effort enrichment: fetch each profile (they are small)
+            // and append the module type (SFP/SFP+/SFP28, media) read from
+            // the EEPROM bytes to both list entries.
+            Repository.enrichLabels(files);
+
             console.log("Fetched Templates.");
         } else {
             // Make the failure visible instead of leaving a silently empty list.
@@ -151,5 +157,35 @@ export class Repository {
         }
 
         return Repository.cdnFileUrl + filename;
+    }
+
+    /**
+     * Best-effort enrichment of the repository lists: fetches each profile
+     * (they are small) and appends the module type (SFP/SFP+/SFP28, media)
+     * read from the EEPROM bytes to both list entries. Failures leave the
+     * plain labels.
+     *
+     * @param {string[]} files - The file names listed in the repository.
+     * @return {void} Does not return a value (results land in the DOM).
+     */
+    private static enrichLabels(files: string[]): void {
+        files.forEach(name => {
+            fetch(Repository.getFileUrl(name)).then(async response => {
+                if (!response.ok) {
+                    return;
+                }
+
+                const bytes = new Uint8Array(await response.arrayBuffer());
+                const type = moduleTypeLabel(bytes);
+
+                $("#sfp-repo").find(`option[value="${name}"]`).add(`#profile-repo-list option[value="${name}"]`).each((_, element) => {
+                    const $element = $(element);
+
+                    $element.text($element.text().split(" [")[0] + ` [${type}]`);
+                });
+            }).catch(() => {
+                // Ignore: labels stay without the type hint.
+            });
+        });
     }
 }
