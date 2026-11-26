@@ -45,7 +45,7 @@
   "default-name": "SFP Wizard",
   "battery": "Batterie",
   "no-eeprom-selected": "Es wurde kein EEPROM Dump zum flashen ausgewählt.",
-  "eeprom-dump-send": "EEPROM-Dump in den Puffer des Wizards geladen. Bestätige das Schreiben am WIZARD selbst: wähle \"Write\" auf dem Wizard-Display (die App kann das Modul nicht aus der Ferne beschreiben).",
+  "eeprom-dump-send": "EEPROM-Dump in den Puffer des Wizards geladen. Bestätige das Schreiben am WIZARD selbst: wähle \"{{button}}\" auf dem Wizard-Display (die App kann das Modul nicht aus der Ferne beschreiben).",
   "eeprom-sync-error": "Beim Synchronisieren des EEPROM Dumps ist ein Fehler aufgetreten.",
   "eeprom-file-error": "Falsches EEPROM Dump File, die Datei muss 512 (SFP) oder 640 (QSFP) Bytes lang sein.",
   "eeprom-sync-nomodule": "Um ein EEPROM Dump zu übertragen, muss ein Fasermodul eingesteckt werden.",

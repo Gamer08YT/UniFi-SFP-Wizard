@@ -49,6 +49,9 @@ class Wizard {
     private static profileSelect: JQuery<HTMLElement>;
     private static profileDownloadButton: JQuery<HTMLElement>;
     private static profileBackupButton: JQuery<HTMLElement>;
+    // Store the connected device's firmware version (e.g. "1.1.8").
+    private static firmwareVersion: string | undefined;
+
     private static profileUploadButton: JQuery<HTMLElement>;
     private static profileRepoList: JQuery<HTMLElement>;
     private static profileRepoUploadButton: JQuery<HTMLElement>;
@@ -631,7 +634,7 @@ class Wizard {
                         const header = (r as any).header;
 
                         if (header.statusCode == 200) {
-                            Wizard.notify(i18next.t("common:eeprom-dump-send"), "success");
+                            Wizard.notify(i18next.t("common:eeprom-dump-send", {button: Wizard.deviceWriteLabel()}), "success");
                         } else {
                             Wizard.notify(i18next.t("common:eeprom-sync-error"), "warning");
                         }
@@ -1616,7 +1619,41 @@ class Wizard {
             const data = (r as any).body;
 
             this.setText("firmware", data.fwv);
+            Wizard.firmwareVersion = data.fwv;
         });
+    }
+
+
+    /**
+     * Label of the on-device confirmation button the Wizard shows after an
+     * EEPROM dump has been loaded into its buffer. Firmware newer than 1.0.5
+     * labels it "Load", older firmware "Write". If the version is unknown
+     * (query failed), "Load" is assumed since current devices run >= 1.1.x.
+     *
+     * @return {string} The label shown on the Wizard's screen.
+     */
+    private static deviceWriteLabel(): string {
+        const fwv = Wizard.firmwareVersion;
+
+        if (!fwv) {
+            return "Load";
+        }
+
+        const toNumbers = (v: string) => v.split(".").map(n => parseInt(n, 10) || 0);
+        const current = toNumbers(fwv);
+        const min = toNumbers("1.0.5");
+
+        for (let i = 0; i < Math.max(current.length, min.length); i++) {
+            const a = current[i] ?? 0;
+            const b = min[i] ?? 0;
+
+            if (a !== b) {
+                return a > b ? "Load" : "Write";
+            }
+        }
+
+        // Exactly 1.0.5: old label.
+        return "Write";
     }
 
     /**
@@ -1644,6 +1681,7 @@ class Wizard {
     private static clearFields() {
         // Clear Device Info Fields.
         this.setText("firmware", "-");
+        Wizard.firmwareVersion = undefined;
         this.setText("name", "-");
         this.setText("serial", "-");
         this.setText("battery", "-");
