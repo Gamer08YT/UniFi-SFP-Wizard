@@ -634,7 +634,7 @@ class Wizard {
                         const header = (r as any).header;
 
                         if (header.statusCode == 200) {
-                            Wizard.notify(i18next.t("common:eeprom-dump-send", {button: Wizard.deviceWriteLabel()}), "success");
+                            Wizard.notify(i18next.t("common:eeprom-dump-send"), "success");
                         } else {
                             Wizard.notify(i18next.t("common:eeprom-sync-error"), "warning");
                         }
@@ -1620,40 +1620,47 @@ class Wizard {
 
             this.setText("firmware", data.fwv);
             Wizard.firmwareVersion = data.fwv;
+            this.applyWriteButtonLabel();
         });
     }
 
 
     /**
-     * Label of the on-device confirmation button the Wizard shows after an
-     * EEPROM dump has been loaded into its buffer. Firmware newer than 1.0.5
-     * labels it "Load", older firmware "Write". If the version is unknown
-     * (query failed), "Load" is assumed since current devices run >= 1.1.x.
+     * Updates the EEPROM write button label to match what the app actually
+     * does: firmware newer than 1.0.5 only receives the dump into a buffer
+     * that is flashed from the Wizard's own screen, so the button says
+     * "Load" instead of "Write". Older firmware (and unknown versions,
+     * e.g. before connecting) keep the "Write" label.
      *
-     * @return {string} The label shown on the Wizard's screen.
+     * @return {void} Does not return a value.
      */
-    private static deviceWriteLabel(): string {
+    private static applyWriteButtonLabel(): void {
         const fwv = Wizard.firmwareVersion;
+        let label = i18next.t("common:write") as string;
 
-        if (!fwv) {
-            return "Load";
-        }
+        if (fwv) {
+            const toNumbers = (v: string) => v.split(".").map(n => parseInt(n, 10) || 0);
+            const current = toNumbers(fwv);
+            const min = toNumbers("1.0.5");
 
-        const toNumbers = (v: string) => v.split(".").map(n => parseInt(n, 10) || 0);
-        const current = toNumbers(fwv);
-        const min = toNumbers("1.0.5");
+            let newer = false;
 
-        for (let i = 0; i < Math.max(current.length, min.length); i++) {
-            const a = current[i] ?? 0;
-            const b = min[i] ?? 0;
+            for (let i = 0; i < Math.max(current.length, min.length); i++) {
+                const a = current[i] ?? 0;
+                const b = min[i] ?? 0;
 
-            if (a !== b) {
-                return a > b ? "Load" : "Write";
+                if (a !== b) {
+                    newer = a > b;
+                    break;
+                }
+            }
+
+            if (newer) {
+                label = i18next.t("common:load") as string;
             }
         }
 
-        // Exactly 1.0.5: old label.
-        return "Write";
+        Wizard.writeButton.text(label);
     }
 
     /**
@@ -1682,6 +1689,7 @@ class Wizard {
         // Clear Device Info Fields.
         this.setText("firmware", "-");
         Wizard.firmwareVersion = undefined;
+        this.applyWriteButtonLabel();
         this.setText("name", "-");
         this.setText("serial", "-");
         this.setText("battery", "-");
@@ -1949,7 +1957,7 @@ class Wizard {
         Wizard.rebootButton.text(i18next.t("common:reboot"));
         Wizard.readButton.text(i18next.t("common:read"));
         Wizard.saveButton.text(i18next.t("common:save"));
-        Wizard.writeButton.text(i18next.t("common:write"));
+        Wizard.applyWriteButtonLabel();
         Wizard.nameButton.text(i18next.t("common:name-title"));
 
         $("#autoscroll-label"
