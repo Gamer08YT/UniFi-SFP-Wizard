@@ -31,6 +31,9 @@ export class ProfileStore {
     // MAC address provider injected by Wizard.ts.
     private static macProvider: (() => string) | null = null;
 
+    // Raw sender injected by Wizard.ts (for binary upload bodies).
+    private static senderRaw: ((method: "GET" | "POST", path: string, rawBody: Uint8Array) => Promise<any>) | null = null;
+
     // Last fetched profile list and the device's preferred chunk size.
     private static profiles: StoredProfile[] = [];
     private static chunkSize: number = 512;
@@ -41,9 +44,10 @@ export class ProfileStore {
      * @param sender - Callback issuing an API request and resolving to the decoded response.
      * @param macProvider - Callback returning the MAC address of the connected device.
      */
-    public static bind(sender: (method: "GET" | "POST", path: string, bodyObj?: any) => Promise<any>, macProvider: () => string): void {
+    public static bind(sender: (method: "GET" | "POST", path: string, bodyObj?: any) => Promise<any>, macProvider: () => string, senderRaw?: (method: "GET" | "POST", path: string, rawBody: Uint8Array) => Promise<any>): void {
         ProfileStore.sender = sender;
         ProfileStore.macProvider = macProvider;
+        ProfileStore.senderRaw = senderRaw ?? null;
     }
 
     /**
@@ -127,5 +131,59 @@ export class ProfileStore {
         }
 
         return data;
+    }
+
+    /**
+     * Uploads an EEPROM snapshot into the Wizard's internal Profile Store.
+     *
+     * The upload flow mirrors the module write flow (start with the snapshot
+     * size, then send the bytes as a raw request body). Unlike the list/read
+     * endpoints, the favorites upload handlers have only been inferred from
+     * the 1.1.8 firmware image, not confirmed on a device yet - callers should
+     * be prepared for this to fail on some firmware versions.
+     *
+     * @param {Uint8Array} data - The EEPROM snapshot to store (SFP 512 or QSFP 640 bytes).
+     * @return {Promise<void>} A promise that resolves once the snapshot has been sent.
+     */
+    public static async upload(data: Uint8Array): Promise<void> {
+        const sender = ProfileStore.sender;
+        const senderRaw = ProfileStore.senderRaw;
+
+        if (sender === null || ProfileStore.macProvider === null || senderRaw === null) {
+            throw new Error("ProfileStore is not bound to a Wizard.");
+        }
+
+        // Abort any stale upload session (best effort: a firmware without the
+        // favorites handlers fails here and the error is ignored).
+        try {
+            await sender("POST", ProfileStore.path("/xsfp/favorites/cancel"));
+        } catch (e) {
+            console.debug("favorites/cancel before upload failed (ignorable).", e);
+        }
+
+        // Start the upload session with the snapshot size.
+        const startResp = await sender("POST", ProfileStore.path("/xsfp/favorites/start"), {size: data.length});
+        const startBody = (startResp as any).body;
+
+        if (startBody && startBody.statusCode !== undefined && startBody.statusCode !== 200) {
+            throw new Error(`favorites/start failed with status ${startBody.statusCode}.`);
+        }
+
+        // Send the snapshot bytes as a raw request body (same pattern as /xsfp/sync/data).
+        const dataResp = await senderRaw("POST", ProfileStore.path("/xsfp/favorites/data"), data);
+        const header = (dataResp as any).header;
+
+        if (header && header.statusCode !== undefined && header.statusCode !== 200) {
+            throw new Error(`favorites/data failed with status ${header.statusCode}.`);
+        }
+    }
+
+    /**
+     * Builds the full API path for a favorites endpoint.
+     */
+    private static path(suffix: string): string {
+        const macProvider = ProfileStore.macProvider;
+
+        return `/api/1.0/${macProvider}${suffix}`;
     }
 }

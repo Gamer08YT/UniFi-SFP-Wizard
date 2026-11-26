@@ -57,6 +57,7 @@ https://ubiquiti-networks-forum.de/sfp-wizard/
         - List the profiles stored on the Wizard's internal storage
         - Download a stored profile as a `.uieeprom` file
         - Copy a stored profile into the local Backup Library
+        - Upload the selected profile to the Wizard's internal storage (experimental)
 
 Currently, I implemented only the Dump Functions, DDM would be nice too, but you manually have to activate it on the
 Wizard, so I think it's not interesting at the moment.
@@ -103,9 +104,13 @@ on the device). The app's **Profile Store** card lists what's on the device and 
 2. **Download .uieeprom** — save a stored profile as a regular `.uieeprom` file.
 3. **Save to My Backups** — copy a stored profile into the local Backup Library, so it can be used
    as a write source like any other backup.
+4. **Upload to Wizard** — send the EEPROM profile currently selected under **Write a profile**
+   (Local File, Repository, or My Backups) to the Wizard's internal Profile Store.
 
-Uploading or deleting profiles from the app is not implemented yet — use the Wizard's own
-**Copy & Save Profile** to add profiles for now.
+> **Note:** the upload uses the firmware's `POST /xsfp/favorites/*` endpoints, which have only
+> been inferred from the 1.1.8 firmware image and are not confirmed on a device yet. The app asks
+> for confirmation before uploading and refreshes the stored list afterwards. If it fails on your
+> firmware version, the Wizard's own **Copy & Save Profile** still works.
 
 ## Contributing
 

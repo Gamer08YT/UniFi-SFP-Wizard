@@ -49,6 +49,7 @@ class Wizard {
     private static profileSelect: JQuery<HTMLElement>;
     private static profileDownloadButton: JQuery<HTMLElement>;
     private static profileBackupButton: JQuery<HTMLElement>;
+    private static profileUploadButton: JQuery<HTMLElement>;
 
     // Store fetched EEPROM bytes for the currently selected Repository entry.
     private static repoEepromData: Uint8Array | null = null;
@@ -370,34 +371,8 @@ class Wizard {
 
 
         // Register Profile Store Listeners (Wizard firmware 1.1.8+).
-        Wizard.profileLoadButton.on("click", async () => {
-            Wizard.setLoader(true);
-
-            try {
-                const profiles = await ProfileStore.list();
-
-                // Remove previous entries before populating the fresh list.
-                $("#profile-list option").remove();
-
-                if (profiles.length === 0) {
-                    $("#profile-list").append(`<option value="" disabled>${i18next.t("common:profiles-empty")}</option>`);
-
-                    Wizard.notify(i18next.t("common:profiles-empty"), "info");
-                } else {
-                    profiles.forEach((profile, index) => {
-                        const label = `${profile.partNumber} - ${profile.sn} (${profile.type.toUpperCase()}, ${profile.size} B)`;
-
-                        $("#profile-list").append(`<option value="${index}">${label}</option>`);
-                    });
-
-                    Wizard.notify(i18next.t("common:profiles-loaded"), "success");
-                }
-            } catch (e) {
-                console.warn("Failed to load the Wizard's Profile Store.", e);
-                Wizard.notify(i18next.t("common:profiles-load-failed"), "failure");
-            } finally {
-                Wizard.setLoader(false);
-            }
+        Wizard.profileLoadButton.on("click", () => {
+            this.loadProfiles();
         });
 
         // Enable the profile actions once a stored profile is selected.
@@ -469,6 +444,46 @@ class Wizard {
             } finally {
                 Wizard.setLoader(false);
             }
+        });
+
+
+        // Upload the selected EEPROM profile to the Wizard's Profile Store.
+        Wizard.profileUploadButton.on("click", async () => {
+            const bytes = await this.readFile();
+
+            if (bytes === null) {
+                Wizard.notify(i18next.t("common:no-eeprom-selected"), "failure");
+                return;
+            }
+
+            if (bytes.length !== 512 && bytes.length !== 640) {
+                Wizard.notify(i18next.t("common:profiles-upload-invalid"), "failure");
+                return;
+            }
+
+            Confirm.show(
+                i18next.t("common:profiles-upload-title"),
+                i18next.t("common:profiles-upload-message"),
+                i18next.t("common:yes"),
+                i18next.t("common:no"),
+                async () => {
+                    Wizard.setLoader(true);
+
+                    try {
+                        await ProfileStore.upload(bytes);
+
+                        Wizard.notify(i18next.t("common:profiles-uploaded"), "success");
+
+                        // Refresh the stored profile list.
+                        await this.loadProfiles();
+                    } catch (e) {
+                        console.warn("Failed to upload the profile to the Wizard.", e);
+                        Wizard.notify(i18next.t("common:profiles-upload-failed"), "failure");
+                    } finally {
+                        Wizard.setLoader(false);
+                    }
+                }
+            );
         });
         // Register Connect Button Click Listener.
         Wizard.connectButton.on("click", () => {
@@ -705,9 +720,14 @@ class Wizard {
         Wizard.profileSelect = $("#profile-list");
         Wizard.profileDownloadButton = $("#download-profile");
         Wizard.profileBackupButton = $("#profile-to-backup");
+        Wizard.profileUploadButton = $("#upload-profile");
 
         // Bind the Profile Store to the Wizard's BLE API layer.
-        ProfileStore.bind((method, path, bodyObj = {}) => Wizard.sendApiRequest(method, path, bodyObj), () => Wizard.deviceId);
+        ProfileStore.bind(
+            (method, path, bodyObj = {}) => Wizard.sendApiRequest(method, path, bodyObj),
+            () => Wizard.deviceId,
+            (method, path, rawBody) => Wizard.sendApiRequestRaw(method, path, rawBody)
+        );
 
         // Load new Theme if Classic Param is not set.
         if (!Wizard.shouldUseClassicTheme()) {
@@ -2152,6 +2172,43 @@ class Wizard {
         if (!file) return null;
 
         return new Uint8Array(await file.arrayBuffer());
+    }
+
+    /**
+     * Loads the profiles stored on the Wizard and populates the Profile Store
+     * select. Used by the "Load Profiles" button and to refresh the list after
+     * an upload.
+     *
+     * @return {Promise<void>} A promise that resolves once the list has been refreshed.
+     */
+    private async loadProfiles(): Promise<void> {
+        Wizard.setLoader(true);
+
+        try {
+            const profiles = await ProfileStore.list();
+
+            // Remove previous entries before populating the fresh list.
+            $("#profile-list option").remove();
+
+            if (profiles.length === 0) {
+                $("#profile-list").append(`<option value="" disabled>${i18next.t("common:profiles-empty")}</option>`);
+
+                Wizard.notify(i18next.t("common:profiles-empty"), "info");
+            } else {
+                profiles.forEach((profile, index) => {
+                    const label = `${profile.partNumber} - ${profile.sn} (${profile.type.toUpperCase()}, ${profile.size} B)`;
+
+                    $("#profile-list").append(`<option value="${index}">${label}</option>`);
+                });
+
+                Wizard.notify(i18next.t("common:profiles-loaded"), "success");
+            }
+        } catch (e) {
+            console.warn("Failed to load the Wizard's Profile Store.", e);
+            Wizard.notify(i18next.t("common:profiles-load-failed"), "failure");
+        } finally {
+            Wizard.setLoader(false);
+        }
     }
 
     /**
