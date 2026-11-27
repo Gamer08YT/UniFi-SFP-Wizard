@@ -14,6 +14,13 @@ export class Repository {
     private static cdnListUrl = "https://data.jsdelivr.com/v1/packages/gh/Gamer08YT/UniFi-SFP-Wizard@master";
     private static cdnFileUrl = "https://cdn.jsdelivr.net/gh/Gamer08YT/UniFi-SFP-Wizard@master/repository/";
 
+    // The copy of the repository served next to the app (./repository/).
+    // Preferred source: no rate limits, no external dependency, works from a
+    // mirror or an offline copy. dumps.json doubles as the index. Files listed
+    // here are fetched locally instead of from GitHub/jsDelivr.
+    private static localBase = "./repository/";
+    private static localFiles = new Set<string>();
+
     // Per-file download URLs from the GitHub API listing (when available).
     private static fileUrls: { [filename: string]: string } = {};
     /**
@@ -28,34 +35,64 @@ export class Repository {
         let files: string[] = [];
         let listingOk = false;
 
-        // Primary: GitHub contents API (also yields per-file download URLs).
+        const localLabels: { [filename: string]: string } = {};
+
+        // Primary: the repository copy served next to the app.
         try {
-            const response = await fetch(Repository.baseUrl + "contents/repository");
+            const response = await fetch(Repository.localBase + "dumps.json", {cache: "no-cache"});
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
+            if (response.ok) {
+                const data = await response.json();
+
+                if (data && Array.isArray(data.dumps)) {
+                    data.dumps.forEach((dump: { file: string, name: string }) => {
+                        if (dump.file && dump.file.endsWith(".uieeprom")) {
+                            files.push(dump.file);
+                            Repository.localFiles.add(dump.file);
+
+                            if (dump.name) {
+                                localLabels[dump.file] = dump.name;
+                            }
+                        }
+                    });
+                }
+
+                listingOk = files.length > 0;
             }
-
-            // @ts-ignore
-            const data = await response.json();
-
-            // @ts-ignore
-            data.forEach(element => {
-                if (element.name.endsWith(".uieeprom")) {
-                    files.push(element.name);
-                }
-
-                if (element.download_url) {
-                    Repository.fileUrls[element.name] = element.download_url;
-                }
-            });
-
-            listingOk = true;
         } catch (e) {
-            console.warn("GitHub contents API failed, trying the jsDelivr listing.", e);
+            console.warn("Local repository listing failed, trying GitHub.", e);
         }
 
-        // Fallback: jsDelivr package listing (no strict rate limits).
+        // Fallback 1: GitHub contents API (also yields per-file download URLs).
+        if (!listingOk) {
+            try {
+                const response = await fetch(Repository.baseUrl + "contents/repository");
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                // @ts-ignore
+                const data = await response.json();
+
+                // @ts-ignore
+                data.forEach(element => {
+                    if (element.name.endsWith(".uieeprom")) {
+                        files.push(element.name);
+                    }
+
+                    if (element.download_url) {
+                        Repository.fileUrls[element.name] = element.download_url;
+                    }
+                });
+
+                listingOk = true;
+            } catch (e) {
+                console.warn("GitHub contents API failed, trying the jsDelivr listing.", e);
+            }
+        }
+
+        // Fallback 2: jsDelivr package listing (no strict rate limits).
         if (!listingOk) {
             try {
                 const response = await fetch(Repository.cdnListUrl);
@@ -95,24 +132,28 @@ export class Repository {
 
         if (files.length > 0) {
             // Optional friendlier labels from dumps.json (non-critical).
-            const nameByFile: { [key: string]: string } = {};
+            // Labels: already known when the local listing delivered them,
+            // otherwise read from dumps.json (non-critical).
+            const nameByFile: { [filename: string]: string } = Object.assign({}, localLabels);
 
-            try {
-                const dumpsResponse = await fetch(Repository.getFileUrl("dumps.json"));
+            if (Object.keys(nameByFile).length === 0) {
+                try {
+                    const dumpsResponse = await fetch(Repository.getFileUrl("dumps.json"));
 
-                if (dumpsResponse.ok) {
-                    const dumpsData = await dumpsResponse.json();
+                    if (dumpsResponse.ok) {
+                        const dumpsData = await dumpsResponse.json();
 
-                    if (dumpsData && Array.isArray(dumpsData.dumps)) {
-                        dumpsData.dumps.forEach((dump: { file: string, name: string }) => {
-                            if (dump.file && dump.name) {
-                                nameByFile[dump.file] = dump.name;
-                            }
-                        });
+                        if (dumpsData && Array.isArray(dumpsData.dumps)) {
+                            dumpsData.dumps.forEach((dump: { file: string, name: string }) => {
+                                if (dump.file && dump.name) {
+                                    nameByFile[dump.file] = dump.name;
+                                }
+                            });
+                        }
                     }
+                } catch (e) {
+                    console.warn("Failed to fetch dumps.json, falling back to filenames.", e);
                 }
-            } catch (e) {
-                console.warn("Failed to fetch dumps.json, falling back to filenames.", e);
             }
 
             // Remove the static placeholder options (e.g. "Todo") that ship in
@@ -156,11 +197,16 @@ export class Repository {
      * @return {string} A direct download URL for the file.
      */
     public static getFileUrl(filename: string): string {
+        // Files served next to the app are fetched from there.
+        if (Repository.localFiles.has(filename)) {
+            return Repository.localBase + encodeURIComponent(filename);
+        }
+
         if (Repository.fileUrls[filename]) {
             return Repository.fileUrls[filename];
         }
 
-        return Repository.cdnFileUrl + filename;
+        return Repository.cdnFileUrl + encodeURIComponent(filename);
     }
 
     /**

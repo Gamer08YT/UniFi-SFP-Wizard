@@ -31,6 +31,10 @@ version — they're separate and only coincidentally similar-looking right now.
   snapshots without explaining why).
 - **Markup escaping** — repository file names and EEPROM fields (part number, serial, vendor) are
   escaped before being interpolated into list markup.
+- **Self-hosted profile repository** — the app reads the profile list from `./repository/`
+  next to itself first (`dumps.json` doubles as the index), so a deployment that ships the dumps
+  alongside the app needs no GitHub API, no jsDelivr and no per-file network round-trip; the
+  GitHub API and jsDelivr stay as fallbacks for deployments that do not ship the folder.
 - New i18n strings for the Profile Store (en-US, de-DE).
 
 ## [1.2.0] - 2026-07-29
