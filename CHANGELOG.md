@@ -5,6 +5,42 @@ All notable changes to this fork (`posi211/UniFi-SFP-Wizard`) are documented her
 This version number tracks the **web app**, not the physical Wizard device's own firmware
 version — they're separate and only coincidentally similar-looking right now.
 
+
+## [Unreleased]
+
+### Added
+
+- **Profile Store (Wizard firmware 1.1.8+)** — a new card that lists the profiles stored on the
+  Wizard's internal storage ("SFP Profile Store"), downloads them as `.uieeprom` files, copies
+  them into the local Backup Library so they can be used as a write source, and adds the
+  currently selected profile (Local File / Repository / My Backups) to the Wizard's storage.
+  The BLE upload is a bulk-replace session, so the app merges: it re-sends the profiles already
+  stored on the device together with the new one (upload flow confirmed on a device running
+  v1.1.8).
+- Repository multi-upload — the Profile Store card gains a multi-select list of the community
+  Repository profiles, so several EEPROMs can be added to the Wizard's storage in one session.
+- Module type labels — Profile Store, My Backups and Repository list entries now show the module
+  type read from the EEPROM bytes (SFF-8472/SFF-8636 fields: identifier, connector, wavelength,
+  link lengths, nominal bit rate), e.g. "SFP+ · SM 1310nm", "SFP28 · MM 850nm", "SFP · RJ45",
+  "QSFP28 (100G)". Fields the snapshot does not declare are simply omitted.
+- **Detector fix** — BR = 0xFF in the SFP EEPROM is a sentinel, not a speed: the real nominal
+  bit rate lives in byte 66 (units of 250 Mbit/s). Reading 0xFF as ~25.5G labeled 10G modules as
+  SFP28. Spotted by comparing with TeitoShiota's fork.
+- **Checksum warning** — before adding profiles to the Wizard's store the SFF-8472 CC_BASE/CC_EXT
+  checksums are verified and a warning names the suspicious dumps (the firmware rejects corrupt
+  snapshots without explaining why).
+- **Markup escaping** — repository file names and EEPROM fields (part number, serial, vendor) are
+  escaped before being interpolated into list markup.
+- **Readable names in the Wizard's lists** — Profile Store and My Backups entries now show the
+  repository name of the matching module ("IBM/Blade Network BN-CKM-SP-SR 10GBase-SR"), matched by
+  serial number and then part number against the dumps served by the deployment; modules without a
+  catalog match fall back to "vendor PART — SN (type)".
+- **Self-hosted profile repository** — the app reads the profile list from `./repository/`
+  next to itself first (`dumps.json` doubles as the index), so a deployment that ships the dumps
+  alongside the app needs no GitHub API, no jsDelivr and no per-file network round-trip; the
+  GitHub API and jsDelivr stay as fallbacks for deployments that do not ship the folder.
+- New i18n strings for the Profile Store (en-US, de-DE).
+
 ## [1.2.0] - 2026-07-29
 
 ### Added

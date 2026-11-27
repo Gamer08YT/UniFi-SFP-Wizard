@@ -58,5 +58,19 @@
   "backup-required-message": "No local backup found for this module's serial number. Please click \"Save\" first to back it up before writing.",
   "backup-saved-message": "Module EEPROM backed up locally on this device.",
   "backup-read-error": "Unable to verify a backup exists - please read the module again before writing.",
-  "backup-none-found": "No matching backups found."
+  "backup-none-found": "No matching backups found.",
+  "profiles-loaded": "Loaded the profiles stored on the Wizard.",
+  "profiles-empty": "The Wizard's Profile Store is empty.",
+  "profiles-load-failed": "Failed to load the Wizard's Profile Store (requires firmware 1.1.8 or newer).",
+  "profiles-read-failed": "Failed to read the stored profile.",
+  "profiles-placeholder": "No profiles loaded - click \"Load Profiles\" first",
+  "profiles-upload-title": "Upload to Profile Store",
+  "profiles-upload-message": "Add the selected EEPROM profile to the Wizard's internal Profile Store? The app re-uploads the profiles already stored on the device together with the new one (the BLE upload replaces the whole store).",
+  "profiles-uploaded": "Profile uploaded - the Wizard's Profile Store now holds {{n}} profiles.",
+  "profiles-upload-failed": "Failed to upload the profile to the Wizard (requires firmware 1.1.8 or newer).",
+  "profiles-upload-invalid": "Invalid EEPROM dump - only SFP (512 byte) and QSFP (640 byte) snapshots can be uploaded.",
+  "profiles-repo-none-selected": "Select at least one profile from the repository list.",
+  "load": "Load",
+  "repository-unavailable": "Repository temporarily unavailable - reopen this list to retry.",
+  "profiles-checksum-warning": "Checksum mismatch in {{list}} - these dumps are probably corrupt, the Wizard may refuse them."
 }

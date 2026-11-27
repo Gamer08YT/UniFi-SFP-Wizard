@@ -58,5 +58,19 @@
   "backup-required-message": "Für die Seriennummer dieses Moduls wurde kein lokales Backup gefunden. Bitte zuerst auf \"Speichern\" klicken, um ein Backup zu erstellen.",
   "backup-saved-message": "Modul-EEPROM wurde lokal auf diesem Gerät gesichert.",
   "backup-read-error": "Backup konnte nicht überprüft werden - bitte das Modul erneut auslesen, bevor geschrieben wird.",
-  "backup-none-found": "Keine passenden Backups gefunden."
+  "backup-none-found": "Keine passenden Backups gefunden.",
+  "profiles-loaded": "Auf dem Wizard gespeicherte Profile geladen.",
+  "profiles-empty": "Der Profil-Speicher des Wizards ist leer.",
+  "profiles-load-failed": "Profil-Speicher des Wizards konnte nicht geladen werden (erfordert Firmware 1.1.8 oder neuer).",
+  "profiles-read-failed": "Gespeichertes Profil konnte nicht gelesen werden.",
+  "profiles-placeholder": "Keine Profile geladen - zuerst \"Profile laden\" klicken",
+  "profiles-upload-title": "In den Profil-Speicher hochladen",
+  "profiles-upload-message": "Das ausgewählte EEPROM-Profil in den internen Profil-Speicher des Wizards aufnehmen? Die App lädt die bereits gespeicherten Profile zusammen mit dem neuen hoch (der BLE-Upload ersetzt den gesamten Speicher).",
+  "profiles-uploaded": "Profil hochgeladen - der Profil-Speicher des Wizards enthält jetzt {{n}} Profile.",
+  "profiles-upload-failed": "Profil konnte nicht auf den Wizard hochgeladen werden (erfordert Firmware 1.1.8 oder neuer).",
+  "profiles-upload-invalid": "Ungültiger EEPROM-Dump - nur SFP- (512 Byte) und QSFP-Snapshots (640 Byte) können hochgeladen werden.",
+  "profiles-repo-none-selected": "Wähle mindestens ein Profil aus der Repository-Liste.",
+  "load": "Laden",
+  "repository-unavailable": "Repository vorübergehend nicht verfügbar - Liste erneut öffnen, um es erneut zu versuchen.",
+  "profiles-checksum-warning": "Prüfsummenfehler bei {{list}} - diese Dumps sind wahrscheinlich beschädigt, der Wizard könnte sie ablehnen."
 }

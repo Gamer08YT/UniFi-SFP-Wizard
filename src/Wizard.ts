@@ -10,8 +10,11 @@ import {ProtocolType} from "./ProtocolType";
 import {FormatType} from "./FormatType";
 import {Repository} from "./Repository";
 import {BackupStore} from "./BackupStore";
+import {ProfileStore} from "./ProfileStore";
 import untar from "js-untar";
 
+import {eepromChecksums, moduleTypeLabel} from "./ModuleType";
+import {escapeHtml} from "./Html";
 
 class Wizard {
     // Normaly it's UACC-SFP-Wizard don't know why Edge display it as Sfp Wizard.
@@ -42,6 +45,18 @@ class Wizard {
     private static backupGroup: JQuery<HTMLElement>;
     private static backupSearch: JQuery<HTMLElement>;
     private static backupSelect: JQuery<HTMLElement>;
+
+    // Profile Store Elements (Wizard firmware 1.1.8+).
+    private static profileLoadButton: JQuery<HTMLElement>;
+    private static profileSelect: JQuery<HTMLElement>;
+    private static profileDownloadButton: JQuery<HTMLElement>;
+    private static profileBackupButton: JQuery<HTMLElement>;
+    // Store the connected device's firmware version (e.g. "1.1.8").
+    private static firmwareVersion: string | undefined;
+
+    private static profileUploadButton: JQuery<HTMLElement>;
+    private static profileRepoList: JQuery<HTMLElement>;
+    private static profileRepoUploadButton: JQuery<HTMLElement>;
 
     // Store fetched EEPROM bytes for the currently selected Repository entry.
     private static repoEepromData: Uint8Array | null = null;
@@ -171,10 +186,21 @@ class Wizard {
             // Toggle Eeprom Upload State.
             Wizard.eepromUpload.removeAttr("disabled");
             Wizard.repoSelect.removeAttr("disabled");
+            Wizard.profileSelect.removeAttr("disabled");
+            Wizard.profileRepoList.removeAttr("disabled");
         } else {
             // Toggle Eeprom Upload State.
             Wizard.eepromUpload.attr("disabled", "disabled");
             Wizard.repoSelect.attr("disabled", "disabled");
+            Wizard.profileSelect.attr("disabled", "disabled");
+            Wizard.profileRepoList.attr("disabled", "disabled");
+
+            // Reset the Profile Store list.
+            Wizard.profileSelect.empty();
+            Wizard.profileSelect.append(`<option value="" disabled>${i18next.t("common:profiles-placeholder")}</option>`);
+            Wizard.profileDownloadButton.attr("disabled", "disabled");
+            Wizard.profileBackupButton.attr("disabled", "disabled");
+            ProfileStore.reset();
         }
     }
 
@@ -279,6 +305,13 @@ class Wizard {
                 // Clear whatever the other two sources had selected.
                 (Wizard.eepromUpload[0] as HTMLInputElement).value = "";
                 Wizard.backupEepromData = null;
+
+                // Lazy retry: the first load can fail (e.g. the GitHub API
+                // rate limit on mobile networks); refetch when the user
+                // opens this source.
+                if ($("#sfp-repo option").length < 3) {
+                    Repository.fetchTemplates();
+                }
             }
         });
 
@@ -310,7 +343,7 @@ class Wizard {
             }
 
             try {
-                const url = `https://raw.githubusercontent.com/posi211/UniFi-SFP-Wizard/master/repository/${filename}`;
+                const url = Repository.getFileUrl(filename);
                 const response = await fetch(url);
 
                 if (!response.ok) {
@@ -352,6 +385,186 @@ class Wizard {
             }
         });
 
+
+        // Register Profile Store Listeners (Wizard firmware 1.1.8+).
+        Wizard.profileLoadButton.on("click", () => {
+            this.loadProfiles();
+        });
+
+        // Enable the profile actions once a stored profile is selected.
+        Wizard.profileSelect.on("change", () => {
+            const index = parseInt(Wizard.profileSelect.val() as string, 10);
+
+            if (isNaN(index)) {
+                Wizard.profileDownloadButton.attr("disabled", "disabled");
+                Wizard.profileBackupButton.attr("disabled", "disabled");
+            } else {
+                Wizard.profileDownloadButton.removeAttr("disabled");
+                Wizard.profileBackupButton.removeAttr("disabled");
+            }
+        });
+
+        // Download the selected stored profile as a .uieeprom file.
+        Wizard.profileDownloadButton.on("click", async () => {
+            const index = parseInt(Wizard.profileSelect.val() as string, 10);
+
+            if (isNaN(index)) return;
+
+            Wizard.setLoader(true);
+
+            try {
+                const bytes = await ProfileStore.read(index);
+
+                // Reuse the module download flow; it names the file from the EEPROM meta.
+                this.downloadStream({body: bytes});
+            } catch (e) {
+                console.warn("Failed to read the stored profile.", e);
+                Wizard.notify(i18next.t("common:profiles-read-failed"), "failure");
+            } finally {
+                Wizard.setLoader(false);
+            }
+        });
+
+        // Copy the selected stored profile into the local backup library.
+        Wizard.profileBackupButton.on("click", async () => {
+            const index = parseInt(Wizard.profileSelect.val() as string, 10);
+
+            if (isNaN(index)) return;
+
+            Wizard.setLoader(true);
+
+            try {
+                const bytes = await ProfileStore.read(index);
+                const meta = Wizard.fetchEEPROM(bytes);
+
+                if (meta.sn && meta.sn !== "-") {
+                    await BackupStore.save({
+                        sn: meta.sn,
+                        partNumber: meta.part,
+                        vendor: meta.vendor,
+                        type: bytes.length === 640 ? "qsfp" : "sfp",
+                        size: bytes.length,
+                        data: bytes
+                    });
+
+                    // Refresh the library list in case it's currently visible.
+                    await this.refreshBackupList(Wizard.backupSearch.val() as string);
+
+                    Wizard.notify(i18next.t("common:backup-saved-message"), "success");
+                } else {
+                    Wizard.notify(i18next.t("common:backup-read-error"), "failure");
+                }
+            } catch (e) {
+                console.warn("Failed to store the profile backup.", e);
+                Wizard.notify(i18next.t("common:profiles-read-failed"), "failure");
+            } finally {
+                Wizard.setLoader(false);
+            }
+        });
+
+
+        // Upload the selected EEPROM profile to the Wizard's Profile Store.
+        // Upload the selected EEPROM profile to the Wizard's Profile Store.
+        // The BLE upload is a bulk-replace session: the currently stored
+        // profiles are read first and sent again together with the new one.
+        // Upload the selected EEPROM profile to the Wizard's Profile Store.
+        // The BLE upload is a bulk-replace session: the currently stored
+        // profiles are read first and sent again together with the new one.
+        Wizard.profileUploadButton.on("click", async () => {
+            const bytes = await this.readFile();
+
+            if (bytes === null) {
+                Wizard.notify(i18next.t("common:no-eeprom-selected"), "failure");
+                return;
+            }
+
+            if (bytes.length !== 512 && bytes.length !== 640) {
+                Wizard.notify(i18next.t("common:profiles-upload-invalid"), "failure");
+                return;
+            }
+
+            Confirm.show(
+                i18next.t("common:profiles-upload-title"),
+                i18next.t("common:profiles-upload-message"),
+                i18next.t("common:yes"),
+                i18next.t("common:no"),
+                async () => {
+                    Wizard.setLoader(true);
+
+                    try {
+                        await this.mergeAndUpload([bytes]);
+                    } catch (e) {
+                        console.warn("Failed to upload the profile to the Wizard.", e);
+
+                        Wizard.notify((i18next.t("common:profiles-upload-failed") as string) + " (" + (e as Error).message + ")", "failure");
+                    } finally {
+                        Wizard.setLoader(false);
+                    }
+                }
+            );
+        });
+
+        // Upload multiple repository profiles to the Wizard's Profile Store in
+        // one session (merged with the currently stored profiles).
+        Wizard.profileRepoUploadButton.on("click", async () => {
+            // Lazy retry if the listing failed to load earlier.
+            if ($("#profile-repo-list option").length < 2) {
+                await Repository.fetchTemplates();
+            }
+
+            const filenames = (Wizard.profileRepoList.val() as string[] | null) ?? [];
+
+            if (filenames.length === 0) {
+                Wizard.notify(i18next.t("common:profiles-repo-none-selected"), "failure");
+                return;
+            }
+
+            Confirm.show(
+                i18next.t("common:profiles-upload-title"),
+                i18next.t("common:profiles-upload-message"),
+                i18next.t("common:yes"),
+                i18next.t("common:no"),
+                async () => {
+                    Wizard.setLoader(true);
+
+                    try {
+                        const selected: Uint8Array[] = [];
+
+                        for (const filename of filenames) {
+                            // Guard against placeholder options without a file name.
+                            if (!filename.endsWith(".uieeprom")) continue;
+
+                            const response = await fetch(Repository.getFileUrl(filename));
+
+                            if (!response.ok) {
+                                throw new Error(`HTTP ${response.status} fetching ${filename}`);
+                            }
+
+                            const bytes = new Uint8Array(await response.arrayBuffer());
+
+                            if (bytes.length !== 512 && bytes.length !== 640) {
+                                throw new Error(`Invalid snapshot size ${bytes.length} in ${filename}`);
+                            }
+
+                            selected.push(bytes);
+                        }
+
+                        if (selected.length === 0) {
+                            Wizard.notify(i18next.t("common:profiles-repo-none-selected"), "failure");
+                            return;
+                        }
+
+                        await this.mergeAndUpload(selected);
+                    } catch (e) {
+                        console.warn("Failed to upload the repository profiles to the Wizard.", e);
+
+                        Wizard.notify((i18next.t("common:profiles-upload-failed") as string) + " (" + (e as Error).message + ")", "failure");
+                    } finally {
+                        Wizard.setLoader(false);
+                    }
+                }
+            );
+        });
         // Register Connect Button Click Listener.
         Wizard.connectButton.on("click", () => {
             if (Wizard.device == null) {
@@ -581,6 +794,22 @@ class Wizard {
         Wizard.backupGroup = $("#sfp-backup-group");
         Wizard.backupSearch = $("#backup-search");
         Wizard.backupSelect = $("#sfp-backup");
+
+        // Profile Store Elements.
+        Wizard.profileLoadButton = $("#load-profiles");
+        Wizard.profileSelect = $("#profile-list");
+        Wizard.profileDownloadButton = $("#download-profile");
+        Wizard.profileBackupButton = $("#profile-to-backup");
+        Wizard.profileUploadButton = $("#upload-profile");
+        Wizard.profileRepoList = $("#profile-repo-list");
+        Wizard.profileRepoUploadButton = $("#upload-repo-profiles");
+
+        // Bind the Profile Store to the Wizard's BLE API layer.
+        ProfileStore.bind(
+            (method, path, bodyObj = {}) => Wizard.sendApiRequest(method, path, bodyObj),
+            () => Wizard.deviceId,
+            (method, path, rawBody) => Wizard.sendApiRequestRaw(method, path, rawBody)
+        );
 
         // Load new Theme if Classic Param is not set.
         if (!Wizard.shouldUseClassicTheme()) {
@@ -1330,6 +1559,9 @@ class Wizard {
 
         const [id, seq] = Wizard.nextRequestId();
 
+
+        // Log the outgoing request in the Wizard Log (the log already shows responses).
+        Wizard.setLog(`${method} ${path} ${JSON.stringify(bodyObj)}`, false);
         const req: APIRequest = {
             type: "httpRequest",
             id,
@@ -1401,7 +1633,48 @@ class Wizard {
             const data = (r as any).body;
 
             this.setText("firmware", data.fwv);
+            Wizard.firmwareVersion = data.fwv;
+            this.applyWriteButtonLabel();
         });
+    }
+
+
+    /**
+     * Updates the EEPROM write button label to match what the app actually
+     * does: firmware newer than 1.0.5 only receives the dump into a buffer
+     * that is flashed from the Wizard's own screen, so the button says
+     * "Load" instead of "Write". Older firmware (and unknown versions,
+     * e.g. before connecting) keep the "Write" label.
+     *
+     * @return {void} Does not return a value.
+     */
+    private static applyWriteButtonLabel(): void {
+        const fwv = Wizard.firmwareVersion;
+        let label = i18next.t("common:write") as string;
+
+        if (fwv) {
+            const toNumbers = (v: string) => v.split(".").map(n => parseInt(n, 10) || 0);
+            const current = toNumbers(fwv);
+            const min = toNumbers("1.0.5");
+
+            let newer = false;
+
+            for (let i = 0; i < Math.max(current.length, min.length); i++) {
+                const a = current[i] ?? 0;
+                const b = min[i] ?? 0;
+
+                if (a !== b) {
+                    newer = a > b;
+                    break;
+                }
+            }
+
+            if (newer) {
+                label = i18next.t("common:load") as string;
+            }
+        }
+
+        Wizard.writeButton.text(label);
     }
 
     /**
@@ -1429,6 +1702,8 @@ class Wizard {
     private static clearFields() {
         // Clear Device Info Fields.
         this.setText("firmware", "-");
+        Wizard.firmwareVersion = undefined;
+        this.applyWriteButtonLabel();
         this.setText("name", "-");
         this.setText("serial", "-");
         this.setText("battery", "-");
@@ -1696,7 +1971,7 @@ class Wizard {
         Wizard.rebootButton.text(i18next.t("common:reboot"));
         Wizard.readButton.text(i18next.t("common:read"));
         Wizard.saveButton.text(i18next.t("common:save"));
-        Wizard.writeButton.text(i18next.t("common:write"));
+        Wizard.applyWriteButtonLabel();
         Wizard.nameButton.text(i18next.t("common:name-title"));
 
         $("#autoscroll-label"
@@ -1872,6 +2147,9 @@ class Wizard {
         try {
             const records = await BackupStore.search(term);
 
+            // Readable names from the deployed repository catalog (may be empty).
+            const catalog = await Repository.catalog().catch(() => null);
+
             Wizard.backupSelect.empty();
 
             if (records.length === 0) {
@@ -1884,7 +2162,10 @@ class Wizard {
 
             records.forEach(r => {
                 const date = new Date(r.savedAt).toLocaleString();
-                const label = `${r.partNumber} — ${r.sn} (${r.vendor}, saved ${date})`;
+                const friendly = catalog?.bySerial.get(r.sn) ?? catalog?.byPart.get(r.partNumber);
+                const label = friendly
+                    ? `${escapeHtml(friendly)} (${escapeHtml(r.sn)}) — saved ${escapeHtml(date)}`
+                    : `${escapeHtml(r.vendor)} ${escapeHtml(r.partNumber)} — ${escapeHtml(r.sn)} (${escapeHtml(moduleTypeLabel(r.data))}, saved ${escapeHtml(date)})`;
                 Wizard.backupSelect.append(`<option value="${r.id}">${label}</option>`);
             });
         } catch (e) {
@@ -1922,6 +2203,9 @@ class Wizard {
         // Print Debug Message.
         console.log(`Sending RAW API Request: ${method} ${path}`);
 
+
+        // Log the outgoing raw request in the Wizard Log (the log already shows responses).
+        Wizard.setLog(`${method} ${path} <raw ${rawBody.length} bytes>`, false);
         // Get new ID.
         const [id, seq] = Wizard.nextRequestId();
 
@@ -2025,6 +2309,135 @@ class Wizard {
         if (!file) return null;
 
         return new Uint8Array(await file.arrayBuffer());
+    }
+
+    /**
+     * Loads the profiles stored on the Wizard and populates the Profile Store
+     * select. Used by the "Load Profiles" button and to refresh the list after
+     * an upload.
+     *
+     * @return {Promise<void>} A promise that resolves once the list has been refreshed.
+     */
+    private async loadProfiles(): Promise<void> {
+        Wizard.setLoader(true);
+
+        try {
+            const profiles = await ProfileStore.list();
+
+            // Remove previous entries before populating the fresh list.
+            $("#profile-list option").remove();
+
+            if (profiles.length === 0) {
+                $("#profile-list").append(`<option value="" disabled>${i18next.t("common:profiles-empty")}</option>`);
+
+                Wizard.notify(i18next.t("common:profiles-empty"), "info");
+            } else {
+                profiles.forEach((profile, index) => {
+                    // Part number and serial come from the stored dump.
+                    const label = `${escapeHtml(profile.partNumber)} - ${escapeHtml(profile.sn)} (${escapeHtml(profile.type.toUpperCase())}, ${escapeHtml(profile.size)} B)`;
+
+                    $("#profile-list").append(`<option value="${index}">${label}</option>`);
+                });
+
+                Wizard.notify(i18next.t("common:profiles-loaded"), "success");
+
+                    // Enrich the entries with the precise module type
+                    // (SFP/SFP+/SFP28, media) read from the profile bytes.
+                    this.enrichProfileList();
+            }
+        } catch (e) {
+            console.warn("Failed to load the Wizard's Profile Store.", e);
+            Wizard.notify(i18next.t("common:profiles-load-failed"), "failure");
+        } finally {
+            Wizard.setLoader(false);
+        }
+    }
+
+    /**
+     * Merges the given EEPROM snapshots into the Wizard's Profile Store and
+     * uploads everything in one bulk-replace session: the currently stored
+     * profiles are read first and sent again together with the new ones
+     * (a stored profile with the same type/part number/serial is replaced by
+     * the new version).
+     *
+     * @param {Uint8Array[]} selected - The EEPROM snapshots to add or update.
+     * @return {Promise<void>} A promise that resolves once the store has been rewritten.
+     */
+    private async mergeAndUpload(selected: Uint8Array[]): Promise<void> {
+        const byKey = new Map<string, Uint8Array>();
+        const badChecksums: string[] = [];
+
+        for (const bytes of selected) {
+            const type = bytes.length === 640 ? "qsfp" : "sfp";
+            const meta = Wizard.fetchEEPROM(bytes);
+
+            // A dump whose SFF-8472 checksums do not add up is very likely a
+            // corrupt read; the firmware rejects those without saying why.
+            const cc = eepromChecksums(bytes);
+
+            if (!cc.base || !cc.ext) {
+                badChecksums.push(`${meta.part}/${meta.sn}`);
+            }
+
+            byKey.set(`${type}|${meta.part}|${meta.sn}`, bytes);
+        }
+
+        if (badChecksums.length > 0) {
+            Wizard.notify(i18next.t("common:profiles-checksum-warning", {list: badChecksums.join(", ")}), "warning");
+        }
+
+        const existing = await ProfileStore.list();
+
+        for (let i = 0; i < existing.length; i++) {
+            const key = `${existing[i].type}|${existing[i].partNumber}|${existing[i].sn}`;
+
+            if (!byKey.has(key)) {
+                byKey.set(key, await ProfileStore.read(i));
+            }
+        }
+
+        await ProfileStore.uploadAll(Array.from(byKey.values()));
+
+        Wizard.notify((i18next.t("common:profiles-uploaded", {n: byKey.size}) as string), "success");
+
+        // Refresh the stored profile list.
+        await this.loadProfiles();
+    }
+
+    /**
+     * Replaces the generic type (sfp/qsfp) in the Profile Store list entries
+     * with the precise module type read from the profile bytes (e.g.
+     * "SFP28 · MM 850nm"). Runs sequentially in the background: one BLE
+     * read per entry; entries keep their generic label on failure.
+     */
+    private async enrichProfileList(): Promise<void> {
+        const profiles = ProfileStore.stored();
+
+        // Readable profile names come from the deployed repository catalog
+        // (empty when the deployment does not ship it: labels stay generic).
+        const catalog = await Repository.catalog().catch(() => null);
+
+        for (let index = 0; index < profiles.length; index++) {
+            try {
+                const bytes = await ProfileStore.read(index);
+                const type = moduleTypeLabel(bytes);
+                const identity = Wizard.fetchEEPROM(bytes);
+                const friendly = catalog?.bySerial.get(profiles[index].sn) ?? catalog?.byPart.get(profiles[index].partNumber);
+                const $option = $(`#profile-list option[value="${index}"]`);
+
+                // Catalog match: "IBM/Blade Network BN-CKM-SP-SR 10GBase-SR (SN123) (SFP+, 512 B)".
+                // Otherwise: "Blade Network BN-CKM-SP-SR - SN123 (SFP+, 512 B)".
+                // Catalog match: the repository name already describes the
+                // module, so only the serial is appended to tell copies apart.
+                const label = friendly
+                    ? `${escapeHtml(friendly)} (${escapeHtml(profiles[index].sn)})`
+                    : `${escapeHtml(identity.vendor)} ${escapeHtml(profiles[index].partNumber)} — ${escapeHtml(profiles[index].sn)} (${type}, ${bytes.length} B)`;
+
+                $option.text(label);
+            } catch (e) {
+                console.warn(`Failed to enrich profile #${index} label.`, e);
+            }
+        }
     }
 
     /**

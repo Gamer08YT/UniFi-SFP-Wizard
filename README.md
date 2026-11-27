@@ -53,6 +53,12 @@ https://ubiquiti-networks-forum.de/sfp-wizard/
         - Via Repo
         - Via local Backup Library
     - Save EEPROM (downloads a `.uieeprom` file **and** stores a copy in the local Backup Library)
+    - Profile Store (firmware 1.1.8+)
+        - List the profiles stored on the Wizard's internal storage
+        - Download a stored profile as a `.uieeprom` file
+        - Copy a stored profile into the local Backup Library
+        - Add the selected profile to the Wizard's internal storage (merged with what's already stored)
+        - List entries show the module type read from the EEPROM bytes (SFP/SFP+/SFP28, media: SM/MM/RJ45)
 
 Currently, I implemented only the Dump Functions, DDM would be nice too, but you manually have to activate it on the
 Wizard, so I think it's not interesting at the moment.
@@ -89,6 +95,28 @@ number, part number, or vendor to find and restore a module back to its original
 **Limitation:** the Backup Library is local to the specific browser/device you're using. Saving a
 module from your phone won't make that backup visible (or satisfy the write requirement) on your
 laptop, and vice versa — each browser keeps its own separate library.
+
+## Profile Store (Wizard firmware 1.1.8+)
+
+Firmware 1.1.8 lets the Wizard keep module profiles on its internal storage ("SFP Profile Store"
+on the device). The app's **Profile Store** card lists what's on the device and lets you:
+
+1. **Load Profiles** — list the profiles stored on the Wizard (type, part number, serial, size).
+2. **Download .uieeprom** — save a stored profile as a regular `.uieeprom` file.
+3. **Save to My Backups** — copy a stored profile into the local Backup Library, so it can be used
+   as a write source like any other backup.
+4. **Upload to Wizard** — add the EEPROM profile currently selected under **Write a profile**
+   (Local File, Repository, or My Backups) to the Wizard's internal storage. The BLE upload is a
+   bulk-replace session, so the app first downloads the profiles already stored on the device and
+   sends everything back in one session — a stored profile with the same type, part number and
+   serial number is replaced by the new version.
+5. **Upload Selected to Wizard** — the Profile Store card also has a multi-select list of the
+   community Repository profiles: Ctrl+click (Cmd+click) to pick several and add them all to the
+   Wizard's storage in one session.
+
+> **Note:** the upload flow was reverse-engineered from the 1.1.8 firmware image and confirmed on
+> a device running v1.1.8. Since the device ends up storing exactly the uploaded set, don't
+> unplug it mid-upload.
 
 ## Contributing
 
