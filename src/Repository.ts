@@ -1,6 +1,6 @@
 import $ from "jquery";
 import i18next from "i18next";
-import {moduleTypeLabel} from "./ModuleType";
+import {eepromIdentity, moduleTypeLabel} from "./ModuleType";
 import {escapeHtml} from "./Html";
 
 export class Repository {
@@ -21,6 +21,14 @@ export class Repository {
     private static localBase = "./repository/";
     private static localFiles = new Set<string>();
 
+    // Friendly names from dumps.json, keyed by file name.
+    private static labels: { [filename: string]: string } = {};
+
+    // Part/serial number -> friendly name, built from the locally served
+    // dumps. The Wizard's own lists only expose type/part/serial/size, so this
+    // lets them show the same readable names as the repository.
+    private static catalogPromise: Promise<{ byPart: Map<string, string>; bySerial: Map<string, string> }> | null = null;
+
     // Per-file download URLs from the GitHub API listing (when available).
     private static fileUrls: { [filename: string]: string } = {};
     /**
@@ -32,6 +40,8 @@ export class Repository {
      * @return {void} Does not return a value.
      */
     public static async fetchTemplates() {
+        // The listing may change between calls: drop the derived catalog.
+        Repository.catalogPromise = null;
         let files: string[] = [];
         let listingOk = false;
 
@@ -156,6 +166,9 @@ export class Repository {
                 }
             }
 
+            // Remember the names so the Wizard's own lists can reuse them.
+            Repository.labels = nameByFile;
+
             // Remove the static placeholder options (e.g. "Todo") that ship in
             // the markup, keeping only the leading "Select EEPROM Config" prompt.
             $("#sfp-repo option[value]").remove();
@@ -185,6 +198,67 @@ export class Repository {
             $("#profile-repo-list option").remove();
             $("#profile-repo-list").append(error);
         }
+    }
+
+    /**
+     * Part/serial number -> readable name, derived from the dumps served by
+     * this deployment. The Wizard's Profile Store only reports type, part
+     * number, serial and size, so the callers use this to show repository
+     * names ("IBM/Blade Network BN-CKM-SP-SR 10GBase-SR") instead of bare part
+     * numbers. Built once and cached; empty when the deployment does not ship
+     * the repository folder.
+     *
+     * @return {Promise<{byPart: Map<string, string>, bySerial: Map<string, string>}>} The lookup tables.
+     */
+    public static async catalog(): Promise<{ byPart: Map<string, string>; bySerial: Map<string, string> }> {
+        if (Repository.catalogPromise === null) {
+            Repository.catalogPromise = Repository.buildCatalog();
+        }
+
+        return Repository.catalogPromise;
+    }
+
+    /**
+     * Builds the catalog by reading each locally served dump once.
+     */
+    private static async buildCatalog(): Promise<{ byPart: Map<string, string>; bySerial: Map<string, string> }> {
+        const byPart = new Map<string, string>();
+        const bySerial = new Map<string, string>();
+
+        // Make sure the listing (and the names) are known.
+        if (Repository.localFiles.size === 0 && Object.keys(Repository.labels).length === 0) {
+            try {
+                await Repository.fetchTemplates();
+            } catch (e) {
+                console.warn("Catalog: repository listing unavailable.", e);
+            }
+        }
+
+        for (const filename of Array.from(Repository.localFiles)) {
+            try {
+                const response = await fetch(Repository.getFileUrl(filename));
+
+                if (!response.ok) {
+                    continue;
+                }
+
+                const bytes = new Uint8Array(await response.arrayBuffer());
+                const identity = eepromIdentity(bytes);
+                const label = Repository.labels[filename] || `${identity.vendor} ${identity.part}`;
+
+                if (identity.part !== "-") {
+                    byPart.set(identity.part, label);
+                }
+
+                if (identity.sn !== "-") {
+                    bySerial.set(identity.sn, label);
+                }
+            } catch (e) {
+                console.warn(`Catalog: failed to read '${filename}'.`, e);
+            }
+        }
+
+        return {byPart, bySerial};
     }
 
     /**

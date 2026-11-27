@@ -240,3 +240,22 @@ export function eepromChecksums(data: Uint8Array): { base: boolean; ext: boolean
 
     return {base: sum(0, 62) === data[63], ext: sum(64, 94) === data[95]};
 }
+
+/**
+ * Reads the identity fields of a SFF-8472/SFF-8636 snapshot: vendor name
+ * (bytes 20-35), part number (40-55) and serial number (68-83), space padded.
+ *
+ * @param {Uint8Array} data - The EEPROM snapshot.
+ * @return {{vendor: string, part: string, sn: string}} The trimmed fields.
+ */
+export function eepromIdentity(data: Uint8Array): { vendor: string; part: string; sn: string } {
+    const read = (from: number, len: number) => {
+        if (data.length < from + len) {
+            return "-";
+        }
+
+        return new TextDecoder().decode(data.slice(from, from + len)).trim() || "-";
+    };
+
+    return {vendor: read(20, 16), part: read(40, 16), sn: read(68, 16)};
+}

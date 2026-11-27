@@ -2147,6 +2147,9 @@ class Wizard {
         try {
             const records = await BackupStore.search(term);
 
+            // Readable names from the deployed repository catalog (may be empty).
+            const catalog = await Repository.catalog().catch(() => null);
+
             Wizard.backupSelect.empty();
 
             if (records.length === 0) {
@@ -2159,7 +2162,10 @@ class Wizard {
 
             records.forEach(r => {
                 const date = new Date(r.savedAt).toLocaleString();
-                const label = `${escapeHtml(r.partNumber)} — ${escapeHtml(r.sn)} (${escapeHtml(r.vendor)}, ${escapeHtml(moduleTypeLabel(r.data))}, saved ${escapeHtml(date)})`;
+                const friendly = catalog?.bySerial.get(r.sn) ?? catalog?.byPart.get(r.partNumber);
+                const label = friendly
+                    ? `${escapeHtml(friendly)} (${escapeHtml(r.sn)}) — saved ${escapeHtml(date)}`
+                    : `${escapeHtml(r.vendor)} ${escapeHtml(r.partNumber)} — ${escapeHtml(r.sn)} (${escapeHtml(moduleTypeLabel(r.data))}, saved ${escapeHtml(date)})`;
                 Wizard.backupSelect.append(`<option value="${r.id}">${label}</option>`);
             });
         } catch (e) {
@@ -2407,12 +2413,25 @@ class Wizard {
     private async enrichProfileList(): Promise<void> {
         const profiles = ProfileStore.stored();
 
+        // Readable profile names come from the deployed repository catalog
+        // (empty when the deployment does not ship it: labels stay generic).
+        const catalog = await Repository.catalog().catch(() => null);
+
         for (let index = 0; index < profiles.length; index++) {
             try {
                 const bytes = await ProfileStore.read(index);
                 const type = moduleTypeLabel(bytes);
+                const identity = Wizard.fetchEEPROM(bytes);
+                const friendly = catalog?.bySerial.get(profiles[index].sn) ?? catalog?.byPart.get(profiles[index].partNumber);
                 const $option = $(`#profile-list option[value="${index}"]`);
-                const label = $option.text().replace(/\([^)]*\)$/, `(${type}, ${bytes.length} B)`);
+
+                // Catalog match: "IBM/Blade Network BN-CKM-SP-SR 10GBase-SR (SN123) (SFP+, 512 B)".
+                // Otherwise: "Blade Network BN-CKM-SP-SR - SN123 (SFP+, 512 B)".
+                // Catalog match: the repository name already describes the
+                // module, so only the serial is appended to tell copies apart.
+                const label = friendly
+                    ? `${escapeHtml(friendly)} (${escapeHtml(profiles[index].sn)})`
+                    : `${escapeHtml(identity.vendor)} ${escapeHtml(profiles[index].partNumber)} — ${escapeHtml(profiles[index].sn)} (${type}, ${bytes.length} B)`;
 
                 $option.text(label);
             } catch (e) {

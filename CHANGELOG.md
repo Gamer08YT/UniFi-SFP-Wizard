@@ -31,6 +31,10 @@ version — they're separate and only coincidentally similar-looking right now.
   snapshots without explaining why).
 - **Markup escaping** — repository file names and EEPROM fields (part number, serial, vendor) are
   escaped before being interpolated into list markup.
+- **Readable names in the Wizard's lists** — Profile Store and My Backups entries now show the
+  repository name of the matching module ("IBM/Blade Network BN-CKM-SP-SR 10GBase-SR"), matched by
+  serial number and then part number against the dumps served by the deployment; modules without a
+  catalog match fall back to "vendor PART — SN (type)".
 - **Self-hosted profile repository** — the app reads the profile list from `./repository/`
   next to itself first (`dumps.json` doubles as the index), so a deployment that ships the dumps
   alongside the app needs no GitHub API, no jsDelivr and no per-file network round-trip; the
