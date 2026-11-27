@@ -71,5 +71,6 @@
   "profiles-upload-invalid": "Invalid EEPROM dump - only SFP (512 byte) and QSFP (640 byte) snapshots can be uploaded.",
   "profiles-repo-none-selected": "Select at least one profile from the repository list.",
   "load": "Load",
-  "repository-unavailable": "Repository temporarily unavailable - reopen this list to retry."
+  "repository-unavailable": "Repository temporarily unavailable - reopen this list to retry.",
+  "profiles-checksum-warning": "Checksum mismatch in {{list}} - these dumps are probably corrupt, the Wizard may refuse them."
 }

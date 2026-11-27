@@ -13,7 +13,8 @@ import {BackupStore} from "./BackupStore";
 import {ProfileStore} from "./ProfileStore";
 import untar from "js-untar";
 
-import {moduleTypeLabel} from "./ModuleType";
+import {eepromChecksums, moduleTypeLabel} from "./ModuleType";
+import {escapeHtml} from "./Html";
 
 class Wizard {
     // Normaly it's UACC-SFP-Wizard don't know why Edge display it as Sfp Wizard.
@@ -2158,7 +2159,7 @@ class Wizard {
 
             records.forEach(r => {
                 const date = new Date(r.savedAt).toLocaleString();
-                const label = `${r.partNumber} — ${r.sn} (${r.vendor}, ${moduleTypeLabel(r.data)}, saved ${date})`;
+                const label = `${escapeHtml(r.partNumber)} — ${escapeHtml(r.sn)} (${escapeHtml(r.vendor)}, ${escapeHtml(moduleTypeLabel(r.data))}, saved ${escapeHtml(date)})`;
                 Wizard.backupSelect.append(`<option value="${r.id}">${label}</option>`);
             });
         } catch (e) {
@@ -2326,7 +2327,8 @@ class Wizard {
                 Wizard.notify(i18next.t("common:profiles-empty"), "info");
             } else {
                 profiles.forEach((profile, index) => {
-                    const label = `${profile.partNumber} - ${profile.sn} (${profile.type.toUpperCase()}, ${profile.size} B)`;
+                    // Part number and serial come from the stored dump.
+                    const label = `${escapeHtml(profile.partNumber)} - ${escapeHtml(profile.sn)} (${escapeHtml(profile.type.toUpperCase())}, ${escapeHtml(profile.size)} B)`;
 
                     $("#profile-list").append(`<option value="${index}">${label}</option>`);
                 });
@@ -2357,12 +2359,25 @@ class Wizard {
      */
     private async mergeAndUpload(selected: Uint8Array[]): Promise<void> {
         const byKey = new Map<string, Uint8Array>();
+        const badChecksums: string[] = [];
 
         for (const bytes of selected) {
             const type = bytes.length === 640 ? "qsfp" : "sfp";
             const meta = Wizard.fetchEEPROM(bytes);
 
+            // A dump whose SFF-8472 checksums do not add up is very likely a
+            // corrupt read; the firmware rejects those without saying why.
+            const cc = eepromChecksums(bytes);
+
+            if (!cc.base || !cc.ext) {
+                badChecksums.push(`${meta.part}/${meta.sn}`);
+            }
+
             byKey.set(`${type}|${meta.part}|${meta.sn}`, bytes);
+        }
+
+        if (badChecksums.length > 0) {
+            Wizard.notify(i18next.t("common:profiles-checksum-warning", {list: badChecksums.join(", ")}), "warning");
         }
 
         const existing = await ProfileStore.list();

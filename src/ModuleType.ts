@@ -46,12 +46,31 @@ function sfpGenerationLabel(data: Uint8Array): string {
         return "SFP+ (10G)";
     }
 
+    // BR = 0xFF is a sentinel, not a speed: the nominal bit rate is in
+    // byte 66, in units of 250 Mbit/s (SFF-8472). Without this, 0xFF
+    // would be read as ~25.5G and every such module labeled SFP28.
+    if (br === 0xFF) {
+        const br66 = data[66];
+
+        if (br66 >= 100) {
+            return "SFP28 (25G)";
+        }
+
+        if (br66 >= 38 && br66 <= 50) {
+            return "SFP+ (10G)";
+        }
+
+        if (br66 > 0 && br66 <= 10) {
+            return "SFP (1G)";
+        }
+    }
+
     // Nominal bit rate, only when plausible.
-    if (br >= 240) {
+    if (br !== 0xFF && br >= 240) {
         return "SFP28 (25G)";
     }
 
-    if (br >= 90 && br <= 120) {
+    if (br !== 0xFF && br >= 90 && br <= 120) {
         return "SFP+ (10G)";
     }
 
@@ -191,4 +210,33 @@ function mediaLabelQSFP(data: Uint8Array): string {
     }
 
     return "";
+}
+
+/**
+ * Verifies the SFF-8472 base and extended checksums of a 512-byte A0h page:
+ * CC_BASE (byte 63) is the low byte of the sum of bytes 0-62, CC_EXT
+ * (byte 95) the sum of bytes 64-94. The firmware rejects snapshots with bad
+ * checksums without a useful error, so callers can warn before uploading.
+ *
+ * @param {Uint8Array} data - The EEPROM snapshot.
+ * @return {{base: boolean, ext: boolean}} Whether each checksum matches.
+ */
+export function eepromChecksums(data: Uint8Array): { base: boolean; ext: boolean } {
+    if (data.length !== 512 || data[0] !== 0x03) {
+        // QSFP-family and non-SFP images use a different layout: do not
+        // pretend to validate them.
+        return {base: true, ext: true};
+    }
+
+    const sum = (from: number, to: number) => {
+        let total = 0;
+
+        for (let i = from; i <= to; i++) {
+            total += data[i];
+        }
+
+        return total & 0xFF;
+    };
+
+    return {base: sum(0, 62) === data[63], ext: sum(64, 94) === data[95]};
 }

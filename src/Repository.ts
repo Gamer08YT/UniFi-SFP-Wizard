@@ -1,6 +1,7 @@
 import $ from "jquery";
 import i18next from "i18next";
 import {moduleTypeLabel} from "./ModuleType";
+import {escapeHtml} from "./Html";
 
 export class Repository {
     // Store Base URL.
@@ -121,8 +122,11 @@ export class Repository {
 
             files.forEach(name => {
                 const label = nameByFile[name] || name.replace(".uieeprom", "");
-                $("#sfp-repo").append(`<option value="${name}">${label}</option>`);
-                $("#profile-repo-list").append(`<option value="${name}">${label}</option>`);
+
+                // Both the file name and the label come from the repository,
+                // so they are escaped before being interpolated into markup.
+                $("#sfp-repo").append(`<option value="${escapeHtml(name)}">${escapeHtml(label)}</option>`);
+                $("#profile-repo-list").append(`<option value="${escapeHtml(name)}">${escapeHtml(label)}</option>`);
             });
 
             // Best-effort enrichment: fetch each profile (they are small)

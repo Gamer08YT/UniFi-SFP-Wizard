@@ -23,6 +23,14 @@ version — they're separate and only coincidentally similar-looking right now.
   type read from the EEPROM bytes (SFF-8472/SFF-8636 fields: identifier, connector, wavelength,
   link lengths, nominal bit rate), e.g. "SFP+ · SM 1310nm", "SFP28 · MM 850nm", "SFP · RJ45",
   "QSFP28 (100G)". Fields the snapshot does not declare are simply omitted.
+- **Detector fix** — BR = 0xFF in the SFP EEPROM is a sentinel, not a speed: the real nominal
+  bit rate lives in byte 66 (units of 250 Mbit/s). Reading 0xFF as ~25.5G labeled 10G modules as
+  SFP28. Spotted by comparing with TeitoShiota's fork.
+- **Checksum warning** — before adding profiles to the Wizard's store the SFF-8472 CC_BASE/CC_EXT
+  checksums are verified and a warning names the suspicious dumps (the firmware rejects corrupt
+  snapshots without explaining why).
+- **Markup escaping** — repository file names and EEPROM fields (part number, serial, vendor) are
+  escaped before being interpolated into list markup.
 - New i18n strings for the Profile Store (en-US, de-DE).
 
 ## [1.2.0] - 2026-07-29
